@@ -1,0 +1,93 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>LocalVault</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- State 1: Create Vault (Initially hidden) -->
+        <div id="create-view" class="form-box hidden">
+            <h1>Welcome to LocalVault</h1>
+            <p>Create a master password to secure your new vault.</p>
+            <form id="create-vault-form">
+                <input type="password" id="create-password-input" placeholder="Master Password" required>
+                <input type="password" id="confirm-password-input" placeholder="Confirm Password" required>
+                <button type="submit">Create Vault</button>
+            </form>
+            <p id="create-error-message" class="error"></p>
+        </div>
+
+        <!-- State 2: Unlock Vault (Initially hidden) -->
+        <div id="unlock-view" class="form-box hidden">
+            <h1>LocalVault</h1>
+            <p>Enter your Master Password to unlock.</p>
+            <form id="unlock-vault-form">
+                <input type="password" id="unlock-password-input" placeholder="Master Password" required>
+                <button type="submit">Unlock</button>
+            </form>
+            <p id="unlock-error-message" class="error"></p>
+        </div>
+    </div>
+
+    <script>
+        const createView = document.getElementById('create-view');
+        const unlockView = document.getElementById('unlock-view');
+        
+        const createForm = document.getElementById('create-vault-form');
+        const createPasswordInput = document.getElementById('create-password-input');
+        const confirmPasswordInput = document.getElementById('confirm-password-input');
+        const createErrorMessage = document.getElementById('create-error-message');
+        
+        const unlockForm = document.getElementById('unlock-vault-form');
+        const unlockPasswordInput = document.getElementById('unlock-password-input');
+        const unlockErrorMessage = document.getElementById('unlock-error-message');
+
+        // On page load, ask the main process which state we should be in.
+        document.addEventListener('DOMContentLoaded', async () => {
+            const { vaultExists } = await window.electronAPI.getVaultStatus();
+            if (vaultExists) {
+                unlockView.classList.remove('hidden');
+            } else {
+                createView.classList.remove('hidden');
+            }
+        });
+
+        // Handler for the CREATE form
+        createForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            createErrorMessage.innerText = '';
+            const masterPassword = createPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            if (masterPassword !== confirmPassword) {
+                createErrorMessage.innerText = 'Passwords do not match.';
+                return;
+            }
+            if (masterPassword.length < 8) {
+                createErrorMessage.innerText = 'Password must be at least 8 characters long.';
+                return;
+            }
+            window.electronAPI.createVault(masterPassword);
+        });
+
+        // Handler for the UNLOCK form
+        unlockForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            unlockErrorMessage.innerText = '';
+            const masterPassword = unlockPasswordInput.value;
+            window.electronAPI.unlockVault(masterPassword);
+        });
+
+        // Listener for failed unlock attempts
+        window.electronAPI.onUnlockFailed(() => {
+            unlockErrorMessage.innerText = 'Incorrect master password. Please try again.';
+        });
+    </script>
+</body>
+</html>

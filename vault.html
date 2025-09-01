@@ -1,0 +1,123 @@
+<!-- vault.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>LocalVault - Unlocked</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="main-container">
+        <header>
+            <h1>LocalVault</h1>
+            <button id="lock-button">Lock Vault</button>
+        </header>
+        <div class="content-area">
+            <div class="password-list-container">
+                <h2>Stored Passwords</h2>
+                <div class="search-container">
+                    <input type="search" id="search-input" placeholder="Search accounts...">
+                </div>
+                <ul id="password-list"></ul>
+            </div>
+            <div class="password-form-container">
+                <h2>Add New Password</h2>
+                <form id="add-password-form">
+                    <input type="text" id="account-name" placeholder="Account (e.g., Google)" required>
+                    <input type="text" id="account-username" placeholder="Username / Email" required>
+                    <input type="password" id="account-password" placeholder="Password" required>
+                    <button type="submit">Save Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal and Toast are unchanged -->
+    <div id="edit-modal" class="modal-overlay hidden">
+        <div class="modal-content"><form id="edit-password-form"><h2>Edit Password</h2><input type="hidden" id="edit-id"><input type="text" id="edit-account-name" placeholder="Account" required><input type="text" id="edit-account-username" placeholder="Username / Email" required><input type="text" id="edit-account-password" placeholder="Password" required><div class="modal-actions"><button type="button" id="cancel-edit-btn">Cancel</button><button type="submit">Save Changes</button></div></form></div>
+    </div>
+    <div id="toast-notification" class="toast-notification"></div>
+
+    <script>
+        // --- Element References ---
+        const passwordList = document.getElementById('password-list');
+        const searchInput = document.getElementById('search-input');
+        const addPasswordForm = document.getElementById('add-password-form');
+        const lockButton = document.getElementById('lock-button');
+        const editModal = document.getElementById('edit-modal');
+        const editPasswordForm = document.getElementById('edit-password-form');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        const toast = document.getElementById('toast-notification');
+        let currentPasswords = [];
+        let toastTimer;
+
+        // --- THIS IS THE CORRECTED RENDER FUNCTION ---
+        function renderPasswords() {
+            passwordList.innerHTML = '';
+            
+            const filterText = searchInput.value.toLowerCase();
+            const filteredPasswords = currentPasswords.filter(pw => 
+                pw.account.toLowerCase().includes(filterText) || 
+                pw.username.toLowerCase().includes(filterText)
+            );
+
+            if (filteredPasswords.length === 0) {
+                passwordList.innerHTML = searchInput.value 
+                    ? '<p>No matching passwords found.</p>' 
+                    : '<p>Your vault is empty.</p>';
+                return;
+            }
+
+            filteredPasswords.forEach(pw => {
+                const listItem = document.createElement('li');
+                listItem.className = 'password-item';
+                listItem.innerHTML = `
+                    <div class="password-item-details">
+                        <h3>${escapeHTML(pw.account)}</h3>
+                        <p>Username: ${escapeHTML(pw.username)}</p>
+                    </div>
+                    <div class="password-item-actions">
+                        <button class="action-btn copy-btn" title="Copy Username" data-id="${pw.id}" data-type="username"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
+                        <button class="action-btn copy-btn" title="Copy Password" data-id="${pw.id}" data-type="password"><svg viewBox="0 0 24 24"><path d="M20.62 8.98l-3.61-3.61c-1.29-1.29-3.37-1.29-4.66 0l-1.06 1.06 7.22 7.22 1.06-1.06c1.29-1.29 1.29-3.37 0-4.66zM9.54 12.08l-5.66 5.66c-.39.39-.39 1.02 0 1.41l2.2 2.2c.39.39 1.02.39 1.41 0l5.66-5.66-3.61-3.61z"/></svg></button>
+                        <button class="action-btn edit-btn" title="Edit" data-id="${pw.id}"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
+                        <button class="action-btn delete-btn" title="Delete" data-id="${pw.id}"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
+                    </div>
+                `;
+                passwordList.appendChild(listItem);
+            });
+        }
+
+        function escapeHTML(str) { return str.replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function openEditModal(passwordId) { const passwordToEdit = currentPasswords.find(p => p.id === passwordId); if (!passwordToEdit) return; document.getElementById('edit-id').value = passwordToEdit.id; document.getElementById('edit-account-name').value = passwordToEdit.account; document.getElementById('edit-account-username').value = passwordToEdit.username; document.getElementById('edit-account-password').value = passwordToEdit.password; editModal.classList.remove('hidden'); setTimeout(() => editModal.classList.add('visible'), 10); }
+        function closeEditModal() { editModal.classList.remove('visible'); setTimeout(() => editModal.classList.add('hidden'), 200); }
+        function showToast(message) { if (toastTimer) clearTimeout(toastTimer); toast.innerText = message; toast.classList.add('show'); toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3000); }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', async () => { 
+            currentPasswords = await window.electronAPI.getVaultData();
+            renderPasswords(); 
+        });
+        window.electronAPI.onVaultDataUpdated((passwords) => {
+            currentPasswords = passwords;
+            renderPasswords();
+        });
+        
+        searchInput.addEventListener('input', renderPasswords);
+        lockButton.addEventListener('click', () => window.electronAPI.lockVault());
+        
+        addPasswordForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            window.electronAPI.addPassword({
+                account: document.getElementById('account-name').value,
+                username: document.getElementById('account-username').value,
+                password: document.getElementById('account-password').value,
+            });
+            addPasswordForm.reset();
+        });
+        
+        passwordList.addEventListener('click', (event) => { const target = event.target.closest('.action-btn'); if (!target) return; const id = target.dataset.id; if (target.classList.contains('copy-btn')) { const type = target.dataset.type; window.electronAPI.copyToClipboard({ id, type }); showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} copied to clipboard!`); } if (target.classList.contains('delete-btn')) { if (confirm('Are you sure you want to delete this password?')) { window.electronAPI.deletePassword(id); } } if (target.classList.contains('edit-btn')) { openEditModal(id); } });
+        cancelEditBtn.addEventListener('click', closeEditModal);
+        editPasswordForm.addEventListener('submit', (event) => { event.preventDefault(); const updatedPassword = { id: document.getElementById('edit-id').value, account: document.getElementById('edit-account-name').value, username: document.getElementById('edit-account-username').value, password: document.getElementById('edit-account-password').value }; window.electronAPI.updatePassword(updatedPassword); closeEditModal(); });
+    </script>
+</body>
+</html>
