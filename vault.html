@@ -4,20 +4,25 @@
 <head>
     <meta charset="UTF-8">
     <title>LocalVault - Unlocked</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="main-container">
         <header>
             <h1>LocalVault</h1>
-            <button id="lock-button">Lock Vault</button>
+            <div class="header-actions">
+                <button id="import-vault-btn" class="secondary-btn">Import Vault</button>
+                <button id="export-vault-btn" class="secondary-btn">Export Vault</button>
+                <button id="lock-button">Lock Vault</button>
+            </div>
         </header>
         <div class="content-area">
             <div class="password-list-container">
                 <h2>Stored Passwords</h2>
-                <div class="search-container">
-                    <input type="search" id="search-input" placeholder="Search accounts...">
-                </div>
+                <div class="search-container"><input type="search" id="search-input" placeholder="Search accounts..."></div>
                 <ul id="password-list"></ul>
             </div>
             <div class="password-form-container">
@@ -25,36 +30,47 @@
                 <form id="add-password-form">
                     <input type="text" id="account-name" placeholder="Account (e.g., Google)" required>
                     <input type="text" id="account-username" placeholder="Username / Email" required>
-                    <input type="password" id="account-password" placeholder="Password" required>
+                    <div class="input-group">
+                        <input type="password" id="account-password" placeholder="Password" required>
+                        <div class="input-group-icons">
+                            <button type="button" class="form-icon-btn generate-btn" id="generate-password-add" title="Generate Password"><svg viewBox="0 0 24 24"><path d="M12.94 2.94c-.58-.59-1.52-.59-2.1 0L2.29 11.47c-.59.58-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l3.02-3.02.85.85-3.02 3.02c-.58.59-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l8.53-8.53c.59-.58.59-1.52 0-2.1L12.94 2.94zM4.41 14.29L3 12.86l8.53-8.53 1.43 1.43L4.41 14.29zm4.24 4.24l-1.43-1.43L15.76 8.57l1.43 1.43-8.53 8.53z"/></svg></button>
+                            <button type="button" class="form-icon-btn reveal-btn" id="reveal-password-add" title="Reveal Password"></button>
+                        </div>
+                    </div>
                     <button type="submit">Save Password</button>
                 </form>
             </div>
         </div>
     </div>
-
-    <!-- Edit Modal and Toast are unchanged -->
+    
     <div id="edit-modal" class="modal-overlay hidden">
-        <div class="modal-content"><form id="edit-password-form"><h2>Edit Password</h2><input type="hidden" id="edit-id"><input type="text" id="edit-account-name" placeholder="Account" required><input type="text" id="edit-account-username" placeholder="Username / Email" required><input type="text" id="edit-account-password" placeholder="Password" required><div class="modal-actions"><button type="button" id="cancel-edit-btn">Cancel</button><button type="submit">Save Changes</button></div></form></div>
+        <div class="modal-content"><form id="edit-password-form"><h2>Edit Password</h2><input type="hidden" id="edit-id"><input type="text" id="edit-account-name" placeholder="Account" required><input type="text" id="edit-account-username" placeholder="Username / Email" required><div class="input-group"><input type="password" id="edit-account-password" placeholder="Password" required><div class="input-group-icons"><button type="button" class="form-icon-btn generate-btn" id="generate-password-edit" title="Generate Password"><svg viewBox="0 0 24 24"><path d="M12.94 2.94c-.58-.59-1.52-.59-2.1 0L2.29 11.47c-.59.58-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l3.02-3.02.85.85-3.02 3.02c-.58.59-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l8.53-8.53c.59-.58.59-1.52 0-2.1L12.94 2.94zM4.41 14.29L3 12.86l8.53-8.53 1.43 1.43L4.41 14.29zm4.24 4.24l-1.43-1.43L15.76 8.57l1.43 1.43-8.53 8.53z"/></svg></button><button type="button" class="form-icon-btn reveal-btn" id="reveal-password-edit" title="Reveal Password"></button></div></div><div class="modal-actions"><button type="button" id="cancel-edit-btn">Cancel</button><button type="submit">Save Changes</button></div></form></div>
     </div>
     <div id="toast-notification" class="toast-notification"></div>
 
     <script>
-        // --- Element References ---
         const passwordList = document.getElementById('password-list');
         const searchInput = document.getElementById('search-input');
         const addPasswordForm = document.getElementById('add-password-form');
         const lockButton = document.getElementById('lock-button');
+        const exportVaultBtn = document.getElementById('export-vault-btn');
+        const importVaultBtn = document.getElementById('import-vault-btn');
         const editModal = document.getElementById('edit-modal');
         const editPasswordForm = document.getElementById('edit-password-form');
         const cancelEditBtn = document.getElementById('cancel-edit-btn');
         const toast = document.getElementById('toast-notification');
+        const generateBtnAdd = document.getElementById('generate-password-add');
+        const generateBtnEdit = document.getElementById('generate-password-edit');
+        const revealBtnAdd = document.getElementById('reveal-password-add');
+        const revealBtnEdit = document.getElementById('reveal-password-edit');
         let currentPasswords = [];
         let toastTimer;
 
-        // --- THIS IS THE CORRECTED RENDER FUNCTION ---
+        const eyeIcon = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12c-2.48 0-4.5-2.02-4.5-4.5S9.52 7.5 12 7.5s4.5 2.02 4.5 4.5-2.02 4.5-4.5 4.5zm0-7c-1.38 0-2.5 1.12-2.5 2.5S10.62 14.5 12 14.5s2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z"/></svg>`;
+        const eyeSlashIcon = `<svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.38 1.12 2.5 2.5 2.5.22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.48 0-4.5-2.02-4.5-4.5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.38-1.12-2.5-2.5-2.5-.05 0-.1.01-.16.02z"/></svg>`;
+        
         function renderPasswords() {
             passwordList.innerHTML = '';
-            
             const filterText = searchInput.value.toLowerCase();
             const filteredPasswords = currentPasswords.filter(pw => 
                 pw.account.toLowerCase().includes(filterText) || 
@@ -86,25 +102,80 @@
                 passwordList.appendChild(listItem);
             });
         }
-
+        
         function escapeHTML(str) { return str.replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-        function openEditModal(passwordId) { const passwordToEdit = currentPasswords.find(p => p.id === passwordId); if (!passwordToEdit) return; document.getElementById('edit-id').value = passwordToEdit.id; document.getElementById('edit-account-name').value = passwordToEdit.account; document.getElementById('edit-account-username').value = passwordToEdit.username; document.getElementById('edit-account-password').value = passwordToEdit.password; editModal.classList.remove('hidden'); setTimeout(() => editModal.classList.add('visible'), 10); }
-        function closeEditModal() { editModal.classList.remove('visible'); setTimeout(() => editModal.classList.add('hidden'), 200); }
-        function showToast(message) { if (toastTimer) clearTimeout(toastTimer); toast.innerText = message; toast.classList.add('show'); toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3000); }
 
-        // --- Event Listeners ---
-        document.addEventListener('DOMContentLoaded', async () => { 
+        function openEditModal(passwordId) {
+            const passwordToEdit = currentPasswords.find(p => p.id === passwordId);
+            if (!passwordToEdit) return;
+            document.getElementById('edit-id').value = passwordToEdit.id;
+            document.getElementById('edit-account-name').value = passwordToEdit.account;
+            document.getElementById('edit-account-username').value = passwordToEdit.username;
+            document.getElementById('edit-account-password').value = passwordToEdit.password;
+            document.getElementById('edit-account-password').type = 'password';
+            revealBtnEdit.innerHTML = eyeIcon;
+            editModal.classList.remove('hidden');
+            setTimeout(() => editModal.classList.add('visible'), 10);
+        }
+
+        function closeEditModal() {
+            editModal.classList.remove('visible');
+            setTimeout(() => {
+                editModal.classList.add('hidden');
+                document.getElementById('edit-account-password').type = 'password';
+                revealBtnEdit.innerHTML = eyeIcon;
+            }, 200);
+        }
+
+        function showToast(message) {
+            if (toastTimer) clearTimeout(toastTimer);
+            toast.innerText = message;
+            toast.classList.add('show');
+            toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        function togglePasswordVisibility(passwordInput, button) {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                button.innerHTML = eyeSlashIcon;
+                button.title = "Hide Password";
+            } else {
+                passwordInput.type = 'password';
+                button.innerHTML = eyeIcon;
+                button.title = "Reveal Password";
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
             currentPasswords = await window.electronAPI.getVaultData();
-            renderPasswords(); 
+            renderPasswords();
+            revealBtnAdd.innerHTML = eyeIcon;
+            revealBtnEdit.innerHTML = eyeIcon;
         });
+
         window.electronAPI.onVaultDataUpdated((passwords) => {
             currentPasswords = passwords;
             renderPasswords();
         });
-        
+
         searchInput.addEventListener('input', renderPasswords);
+
         lockButton.addEventListener('click', () => window.electronAPI.lockVault());
-        
+
+        exportVaultBtn.addEventListener('click', async () => {
+            const result = await window.electronAPI.exportVault();
+            if (result.success) {
+                showToast(result.message);
+            }
+        });
+
+        importVaultBtn.addEventListener('click', async () => {
+            const result = await window.electronAPI.importVault();
+            if (!result.success && result.message.includes('Error')) {
+                showToast('Import failed. Please check the file.');
+            }
+        });
+
         addPasswordForm.addEventListener('submit', (event) => {
             event.preventDefault();
             window.electronAPI.addPassword({
@@ -114,10 +185,59 @@
             });
             addPasswordForm.reset();
         });
-        
-        passwordList.addEventListener('click', (event) => { const target = event.target.closest('.action-btn'); if (!target) return; const id = target.dataset.id; if (target.classList.contains('copy-btn')) { const type = target.dataset.type; window.electronAPI.copyToClipboard({ id, type }); showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} copied to clipboard!`); } if (target.classList.contains('delete-btn')) { if (confirm('Are you sure you want to delete this password?')) { window.electronAPI.deletePassword(id); } } if (target.classList.contains('edit-btn')) { openEditModal(id); } });
+
+        passwordList.addEventListener('click', (event) => {
+            const target = event.target.closest('.action-btn');
+            if (!target) return;
+            const id = target.dataset.id;
+            if (target.classList.contains('copy-btn')) {
+                const type = target.dataset.type;
+                window.electronAPI.copyToClipboard({ id, type });
+                showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} copied to clipboard!`);
+            }
+            if (target.classList.contains('delete-btn')) {
+                if (confirm('Are you sure you want to delete this password?')) {
+                    window.electronAPI.deletePassword(id);
+                }
+            }
+            if (target.classList.contains('edit-btn')) {
+                openEditModal(id);
+            }
+        });
+
         cancelEditBtn.addEventListener('click', closeEditModal);
-        editPasswordForm.addEventListener('submit', (event) => { event.preventDefault(); const updatedPassword = { id: document.getElementById('edit-id').value, account: document.getElementById('edit-account-name').value, username: document.getElementById('edit-account-username').value, password: document.getElementById('edit-account-password').value }; window.electronAPI.updatePassword(updatedPassword); closeEditModal(); });
+
+        editPasswordForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const updatedPassword = {
+                id: document.getElementById('edit-id').value,
+                account: document.getElementById('edit-account-name').value,
+                username: document.getElementById('edit-account-username').value,
+                password: document.getElementById('edit-account-password').value,
+            };
+            window.electronAPI.updatePassword(updatedPassword);
+            closeEditModal();
+        });
+
+        generateBtnAdd.addEventListener('click', async () => {
+            const newPassword = await window.electronAPI.generatePassword();
+            document.getElementById('account-password').value = newPassword;
+        });
+
+        generateBtnEdit.addEventListener('click', async () => {
+            const newPassword = await window.electronAPI.generatePassword();
+            document.getElementById('edit-account-password').value = newPassword;
+        });
+
+        revealBtnAdd.addEventListener('click', () => {
+            const passwordInput = document.getElementById('account-password');
+            togglePasswordVisibility(passwordInput, revealBtnAdd);
+        });
+
+        revealBtnEdit.addEventListener('click', () => {
+            const passwordInput = document.getElementById('edit-account-password');
+            togglePasswordVisibility(passwordInput, revealBtnEdit);
+        });
     </script>
 </body>
 </html>
