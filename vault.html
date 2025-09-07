@@ -17,6 +17,7 @@
                 <button id="import-vault-btn" class="secondary-btn">Import Vault</button>
                 <button id="export-vault-btn" class="secondary-btn">Export Vault</button>
                 <button id="lock-button">Lock Vault</button>
+                <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle Theme"></button>
             </div>
         </header>
         <div class="content-area">
@@ -30,6 +31,7 @@
                 <form id="add-password-form">
                     <input type="text" id="account-name" placeholder="Account (e.g., Google)" required>
                     <input type="text" id="account-username" placeholder="Username / Email" required>
+                    <input type="text" id="account-url" placeholder="URL (optional)">
                     <div class="input-group">
                         <input type="password" id="account-password" placeholder="Password" required>
                         <div class="input-group-icons">
@@ -44,7 +46,7 @@
     </div>
     
     <div id="edit-modal" class="modal-overlay hidden">
-        <div class="modal-content"><form id="edit-password-form"><h2>Edit Password</h2><input type="hidden" id="edit-id"><input type="text" id="edit-account-name" placeholder="Account" required><input type="text" id="edit-account-username" placeholder="Username / Email" required><div class="input-group"><input type="password" id="edit-account-password" placeholder="Password" required><div class="input-group-icons"><button type="button" class="form-icon-btn generate-btn" id="generate-password-edit" title="Generate Password"><svg viewBox="0 0 24 24"><path d="M12.94 2.94c-.58-.59-1.52-.59-2.1 0L2.29 11.47c-.59.58-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l3.02-3.02.85.85-3.02 3.02c-.58.59-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l8.53-8.53c.59-.58.59-1.52 0-2.1L12.94 2.94zM4.41 14.29L3 12.86l8.53-8.53 1.43 1.43L4.41 14.29zm4.24 4.24l-1.43-1.43L15.76 8.57l1.43 1.43-8.53 8.53z"/></svg></button><button type="button" class="form-icon-btn reveal-btn" id="reveal-password-edit" title="Reveal Password"></button></div></div><div class="modal-actions"><button type="button" id="cancel-edit-btn">Cancel</button><button type="submit">Save Changes</button></div></form></div>
+        <div class="modal-content"><form id="edit-password-form"><h2>Edit Password</h2><input type="hidden" id="edit-id"><input type="text" id="edit-account-name" placeholder="Account" required><input type="text" id="edit-account-username" placeholder="Username / Email" required><input type="text" id="edit-account-url" placeholder="URL (optional)"><div class="input-group"><input type="password" id="edit-account-password" placeholder="Password" required><div class="input-group-icons"><button type="button" class="form-icon-btn generate-btn" id="generate-password-edit" title="Generate Password"><svg viewBox="0 0 24 24"><path d="M12.94 2.94c-.58-.59-1.52-.59-2.1 0L2.29 11.47c-.59.58-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l3.02-3.02.85.85-3.02 3.02c-.58.59-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l8.53-8.53c.59-.58.59-1.52 0-2.1L12.94 2.94zM4.41 14.29L3 12.86l8.53-8.53 1.43 1.43L4.41 14.29zm4.24 4.24l-1.43-1.43L15.76 8.57l1.43 1.43-8.53 8.53z"/></svg></button><button type="button" class="form-icon-btn reveal-btn" id="reveal-password-edit" title="Reveal Password"></button></div></div><div class="modal-actions"><button type="button" id="cancel-edit-btn">Cancel</button><button type="submit">Save Changes</button></div></form></div>
     </div>
     <div id="toast-notification" class="toast-notification"></div>
 
@@ -55,6 +57,7 @@
         const lockButton = document.getElementById('lock-button');
         const exportVaultBtn = document.getElementById('export-vault-btn');
         const importVaultBtn = document.getElementById('import-vault-btn');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
         const editModal = document.getElementById('edit-modal');
         const editPasswordForm = document.getElementById('edit-password-form');
         const cancelEditBtn = document.getElementById('cancel-edit-btn');
@@ -65,10 +68,24 @@
         const revealBtnEdit = document.getElementById('reveal-password-edit');
         let currentPasswords = [];
         let toastTimer;
+        let currentTheme = 'dark';
 
         const eyeIcon = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12c-2.48 0-4.5-2.02-4.5-4.5S9.52 7.5 12 7.5s4.5 2.02 4.5 4.5-2.02 4.5-4.5 4.5zm0-7c-1.38 0-2.5 1.12-2.5 2.5S10.62 14.5 12 14.5s2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z"/></svg>`;
         const eyeSlashIcon = `<svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.38 1.12 2.5 2.5 2.5.22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.48 0-4.5-2.02-4.5-4.5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.38-1.12-2.5-2.5-2.5-.05 0-.1.01-.16.02z"/></svg>`;
+        const sunIcon = `<svg viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.64 5.64c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41l1.41 1.41c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41L5.64 5.64zm12.73 12.73c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41l1.41 1.41c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41l-1.41-1.41zM18.36 5.64c.39-.39.39-1.02 0-1.41-.39-.39-1.02-.39-1.41 0l-1.41 1.41c-.39.39-.39 1.02 0 1.41s1.02.39 1.41 0l1.41-1.41zM4.22 18.36c.39-.39.39-1.02 0-1.41-.39-.39-1.02-.39-1.41 0l-1.41 1.41c.39.39.39 1.02 0 1.41s1.02.39 1.41 0l1.41-1.41z"/></svg>`;
+        const moonIcon = `<svg viewBox="0 0 24 24"><path d="M12.3 4.9c.4-.2.6-.7.4-1.1-.2-.4-.7-.6-1.1-.4-3.8.9-6.6 4.3-6.6 8.5 0 4.8 3.9 8.8 8.8 8.8 3.8 0 7-2.4 8.3-5.9.2-.4 0-.9-.4-1.1s-.9-.2-1.1 0c-1 1.1-2.5 1.8-4 1.8-3.3 0-6-2.7-6-6 0-1.9 1-3.6 2.6-4.7z"/></svg>`;
         
+        function applyTheme(theme) {
+            if (theme === 'light') {
+                document.body.classList.add('light-mode');
+                themeToggleBtn.innerHTML = moonIcon;
+            } else {
+                document.body.classList.remove('light-mode');
+                themeToggleBtn.innerHTML = sunIcon;
+            }
+            currentTheme = theme;
+        }
+
         function renderPasswords() {
             passwordList.innerHTML = '';
             const filterText = searchInput.value.toLowerCase();
@@ -87,9 +104,16 @@
             filteredPasswords.forEach(pw => {
                 const listItem = document.createElement('li');
                 listItem.className = 'password-item';
+
+                // --- THIS IS THE FIX ---
+                // The link is now INSIDE the h3 tag, guaranteeing it inherits the correct styles.
+                const titleElement = pw.url 
+                    ? `<h3><a href="#" class="account-link" data-url="${escapeHTML(pw.url)}">${escapeHTML(pw.account)}</a></h3>`
+                    : `<h3>${escapeHTML(pw.account)}</h3>`;
+
                 listItem.innerHTML = `
                     <div class="password-item-details">
-                        <h3>${escapeHTML(pw.account)}</h3>
+                        ${titleElement}
                         <p>Username: ${escapeHTML(pw.username)}</p>
                     </div>
                     <div class="password-item-actions">
@@ -112,6 +136,7 @@
             document.getElementById('edit-account-name').value = passwordToEdit.account;
             document.getElementById('edit-account-username').value = passwordToEdit.username;
             document.getElementById('edit-account-password').value = passwordToEdit.password;
+            document.getElementById('edit-account-url').value = passwordToEdit.url || '';
             document.getElementById('edit-account-password').type = 'password';
             revealBtnEdit.innerHTML = eyeIcon;
             editModal.classList.remove('hidden');
@@ -147,6 +172,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            const settings = await window.electronAPI.getSettings();
+            applyTheme(settings.theme);
             currentPasswords = await window.electronAPI.getVaultData();
             renderPasswords();
             revealBtnAdd.innerHTML = eyeIcon;
@@ -159,16 +186,18 @@
         });
 
         searchInput.addEventListener('input', renderPasswords);
-
         lockButton.addEventListener('click', () => window.electronAPI.lockVault());
-
+        themeToggleBtn.addEventListener('click', () => {
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            applyTheme(newTheme);
+            window.electronAPI.saveSettings({ theme: newTheme });
+        });
         exportVaultBtn.addEventListener('click', async () => {
             const result = await window.electronAPI.exportVault();
             if (result.success) {
                 showToast(result.message);
             }
         });
-
         importVaultBtn.addEventListener('click', async () => {
             const result = await window.electronAPI.importVault();
             if (!result.success && result.message.includes('Error')) {
@@ -182,26 +211,36 @@
                 account: document.getElementById('account-name').value,
                 username: document.getElementById('account-username').value,
                 password: document.getElementById('account-password').value,
+                url: document.getElementById('account-url').value
             });
             addPasswordForm.reset();
         });
 
         passwordList.addEventListener('click', (event) => {
-            const target = event.target.closest('.action-btn');
-            if (!target) return;
-            const id = target.dataset.id;
-            if (target.classList.contains('copy-btn')) {
-                const type = target.dataset.type;
-                window.electronAPI.copyToClipboard({ id, type });
-                showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} copied to clipboard!`);
+            const link = event.target.closest('.account-link');
+            if (link) {
+                event.preventDefault();
+                const urlToOpen = link.dataset.url;
+                if(urlToOpen) window.electronAPI.openUrl(urlToOpen);
+                return;
             }
-            if (target.classList.contains('delete-btn')) {
-                if (confirm('Are you sure you want to delete this password?')) {
-                    window.electronAPI.deletePassword(id);
+
+            const actionBtn = event.target.closest('.action-btn');
+            if (actionBtn) {
+                const id = actionBtn.dataset.id;
+                if (actionBtn.classList.contains('copy-btn')) {
+                    const type = actionBtn.dataset.type;
+                    window.electronAPI.copyToClipboard({ id, type });
+                    showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} copied to clipboard!`);
                 }
-            }
-            if (target.classList.contains('edit-btn')) {
-                openEditModal(id);
+                if (actionBtn.classList.contains('delete-btn')) {
+                    if (confirm('Are you sure you want to delete this password?')) {
+                        window.electronAPI.deletePassword(id);
+                    }
+                }
+                if (actionBtn.classList.contains('edit-btn')) {
+                    openEditModal(id);
+                }
             }
         });
 
@@ -214,6 +253,7 @@
                 account: document.getElementById('edit-account-name').value,
                 username: document.getElementById('edit-account-username').value,
                 password: document.getElementById('edit-account-password').value,
+                url: document.getElementById('edit-account-url').value
             };
             window.electronAPI.updatePassword(updatedPassword);
             closeEditModal();
@@ -223,17 +263,14 @@
             const newPassword = await window.electronAPI.generatePassword();
             document.getElementById('account-password').value = newPassword;
         });
-
         generateBtnEdit.addEventListener('click', async () => {
             const newPassword = await window.electronAPI.generatePassword();
             document.getElementById('edit-account-password').value = newPassword;
         });
-
         revealBtnAdd.addEventListener('click', () => {
             const passwordInput = document.getElementById('account-password');
             togglePasswordVisibility(passwordInput, revealBtnAdd);
         });
-
         revealBtnEdit.addEventListener('click', () => {
             const passwordInput = document.getElementById('edit-account-password');
             togglePasswordVisibility(passwordInput, revealBtnEdit);

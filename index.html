@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <title>LocalVault</title>
-    <!-- NEW: Import the Inter font family to match the rest of the app -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
@@ -16,7 +15,6 @@
 </head>
 <body>
     <div class="container">
-        <!-- State 1: Create Vault (Initially hidden) -->
         <div id="create-view" class="form-box hidden">
             <h1>Welcome to LocalVault</h1>
             <p>Create a master password to secure your new vault.</p>
@@ -28,7 +26,6 @@
             <p id="create-error-message" class="error"></p>
         </div>
 
-        <!-- State 2: Unlock Vault (Initially hidden) -->
         <div id="unlock-view" class="form-box hidden">
             <h1>LocalVault</h1>
             <p>Enter your Master Password to unlock.</p>
@@ -41,12 +38,57 @@
     </div>
 
     <script>
-        // The script is completely unchanged and does not need to be modified.
-        const createView = document.getElementById('create-view'); const unlockView = document.getElementById('unlock-view'); const createForm = document.getElementById('create-vault-form'); const createPasswordInput = document.getElementById('create-password-input'); const confirmPasswordInput = document.getElementById('confirm-password-input'); const createErrorMessage = document.getElementById('create-error-message'); const unlockForm = document.getElementById('unlock-vault-form'); const unlockPasswordInput = document.getElementById('unlock-password-input'); const unlockErrorMessage = document.getElementById('unlock-error-message');
-        document.addEventListener('DOMContentLoaded', async () => { const { vaultExists } = await window.electronAPI.getVaultStatus(); if (vaultExists) { unlockView.classList.remove('hidden'); } else { createView.classList.remove('hidden'); } });
-        createForm.addEventListener('submit', (event) => { event.preventDefault(); createErrorMessage.innerText = ''; const masterPassword = createPasswordInput.value; const confirmPassword = confirmPasswordInput.value; if (masterPassword !== confirmPassword) { createErrorMessage.innerText = 'Passwords do not match.'; return; } if (masterPassword.length < 8) { createErrorMessage.innerText = 'Password must be at least 8 characters long.'; return; } window.electronAPI.createVault(masterPassword); });
-        unlockForm.addEventListener('submit', (event) => { event.preventDefault(); unlockErrorMessage.innerText = ''; const masterPassword = unlockPasswordInput.value; window.electronAPI.unlockVault(masterPassword); });
-        window.electronAPI.onUnlockFailed(() => { unlockErrorMessage.innerText = 'Incorrect master password. Please try again.'; });
+        const createView = document.getElementById('create-view');
+        const unlockView = document.getElementById('unlock-view');
+        const createForm = document.getElementById('create-vault-form');
+        const createPasswordInput = document.getElementById('create-password-input');
+        const confirmPasswordInput = document.getElementById('confirm-password-input');
+        const createErrorMessage = document.getElementById('create-error-message');
+        const unlockForm = document.getElementById('unlock-vault-form');
+        const unlockPasswordInput = document.getElementById('unlock-password-input');
+        const unlockErrorMessage = document.getElementById('unlock-error-message');
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const settings = await window.electronAPI.getSettings();
+            if (settings.theme === 'light') {
+                document.body.classList.add('light-mode');
+            }
+
+            const { vaultExists } = await window.electronAPI.getVaultStatus();
+            if (vaultExists) {
+                unlockView.classList.remove('hidden');
+            } else {
+                createView.classList.remove('hidden');
+            }
+        });
+
+        createForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            createErrorMessage.innerText = '';
+            const masterPassword = createPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+
+            if (masterPassword !== confirmPassword) {
+                createErrorMessage.innerText = 'Passwords do not match.';
+                return;
+            }
+            if (masterPassword.length < 8) {
+                createErrorMessage.innerText = 'Password must be at least 8 characters long.';
+                return;
+            }
+            window.electronAPI.createVault(masterPassword);
+        });
+
+        unlockForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            unlockErrorMessage.innerText = '';
+            const masterPassword = unlockPasswordInput.value;
+            window.electronAPI.unlockVault(masterPassword);
+        });
+
+        window.electronAPI.onUnlockFailed(() => {
+            unlockErrorMessage.innerText = 'Incorrect master password. Please try again.';
+        });
     </script>
 </body>
 </html>

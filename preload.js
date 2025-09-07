@@ -17,11 +17,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updatePassword: (updatedPassword) => ipcRenderer.send('update-password', updatedPassword),
   onVaultDataUpdated: (callback) => ipcRenderer.on('vault-data-updated', (event, ...args) => callback(...args)),
   
+  // Backups
+  exportVault: () => ipcRenderer.invoke('export-vault'),
+  importVault: () => ipcRenderer.invoke('import-vault'),
+  
+  // Settings
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  saveSettings: (settings) => ipcRenderer.send('save-settings', settings),
+
   // Other
   lockVault: () => ipcRenderer.send('lock-vault'),
   copyToClipboard: (copyRequest) => ipcRenderer.send('copy-to-clipboard', copyRequest),
-
-  // NEW: Backup functions
-  exportVault: () => ipcRenderer.invoke('export-vault'),
-  importVault: () => ipcRenderer.invoke('import-vault')
+  openUrl: (url) => ipcRenderer.send('open-url', url)
 });
