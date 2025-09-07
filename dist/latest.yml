@@ -1,8 +1,0 @@
-version: 2.0.0
-files:
-  - url: LocalVault-Setup-2.0.0.exe
-    sha512: okfVhvMXyEGBkfKKTXW73XeLLqNRi63YaSaDW7r/be75hQ/NN29YyaZANhGTYv5RoUBVg3xLWN5M42WCr3GcNQ==
-    size: 77064645
-path: LocalVault-Setup-2.0.0.exe
-sha512: okfVhvMXyEGBkfKKTXW73XeLLqNRi63YaSaDW7r/be75hQ/NN29YyaZANhGTYv5RoUBVg3xLWN5M42WCr3GcNQ==
-releaseDate: '2025-09-07T01:43:27.995Z'

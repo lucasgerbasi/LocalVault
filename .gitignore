@@ -1,6 +1,9 @@
 # Dependency directories
 node_modules/
 
+# Build output
+dist/
+
 # Local user data file (should not be in this folder anyway, but good practice)
 vault.json
 
