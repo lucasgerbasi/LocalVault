@@ -105,8 +105,6 @@
                 const listItem = document.createElement('li');
                 listItem.className = 'password-item';
 
-                // --- THIS IS THE FIX ---
-                // The link is now INSIDE the h3 tag, guaranteeing it inherits the correct styles.
                 const titleElement = pw.url 
                     ? `<h3><a href="#" class="account-link" data-url="${escapeHTML(pw.url)}">${escapeHTML(pw.account)}</a></h3>`
                     : `<h3>${escapeHTML(pw.account)}</h3>`;
@@ -277,4 +275,5 @@
         });
     </script>
 </body>
+
 </html>
