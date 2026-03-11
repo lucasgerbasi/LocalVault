@@ -42,5 +42,5 @@ Security was the primary goal of this project. The architecture was designed to 
 *   **Key Derivation:** [Argon2](https://www.npmjs.com/package/argon2) (via `argon2` npm package)
 *   **Frontend:** HTML5, CSS3, and Vanilla JavaScript (no UI frameworks)
 *   **Cryptography:**
-    *   **Encryption Cipher:** AES-2-GCM
+    *   **Encryption Cipher:** AES-256-GCM
     *   **Key Derivation Function:** Argon2id
