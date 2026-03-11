@@ -15,7 +15,7 @@ You can download the latest official installer for Windows, macOS, or Linux from
 ## ✨ Core Features (Version 3)
 
 *   **State-of-the-Art Master Password Protection:** Your master password is protected by **Argon2id**, the current industry gold standard and winner of the Password Hashing Competition, providing superior resistance against modern brute-force attacks.
-*   **End-to-End Encryption:** The entire vault is encrypted using **AES-2-GCM**, a modern authenticated encryption cipher that ensures both confidentiality and data integrity.
+*   **End-to-End Encryption:** The entire vault is encrypted using **AES-256-GCM**, a modern authenticated encryption cipher that ensures both confidentiality and data integrity.
 *   **Full Password Management (CRUD):**
     *   **Create:** Add new password entries, with an optional URL field.
     *   **Read:** Securely copy usernames/passwords to the clipboard and open associated URLs in the default browser.
@@ -30,7 +30,7 @@ You can download the latest official installer for Windows, macOS, or Linux from
 Security was the primary goal of this project. The architecture was designed to mitigate common threats:
 1.  **No Cloud, No Server:** By avoiding a central server, we eliminate the risk of a remote data breach exposing user vaults.
 2.  **Zero Knowledge:** The application code has no knowledge of your master password. If you forget it, your data is irrecoverable.
-3.  **Tamper-Proof Vault:** The use of AES-2-GCM ensures that if the `vault.json` file is modified or corrupted in any way, decryption will fail, alerting the user to a potential issue.
+3.  **Tamper-Proof Vault:** The use of AES-256-GCM ensures that if the `vault.json` file is modified or corrupted in any way, decryption will fail, alerting the user to a potential issue.
 4.  **Secure by Default:** Features like auto-lock and secure URL handling (`shell.openExternal`) are enabled by default to protect users.
 5.  **Renderer Process Isolation:** Following Electron's security best practices, `contextBridge` is used to securely expose backend functions to the UI, preventing the renderer process from having access to Node.js APIs.
 
