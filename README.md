@@ -45,7 +45,6 @@ Security was the primary goal of this project. The architecture was designed to 
 *   **Cryptography:**
     *   **Encryption Cipher:** AES-256-GCM
     *   **Key Derivation Function:** Argon2id
-=======
 * **Framework:** [Electron](https://www.electronjs.org/)
 * **Packaging:** [electron-builder](https://www.electron.build/)
 * **Backend Logic:** [Node.js](https://nodejs.org/) (using built-in `crypto`, `fs`, `shell` modules)
