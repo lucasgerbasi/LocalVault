@@ -12,18 +12,19 @@ This project began as a direct solution to a personal need. I wanted a password 
 
 You can download the latest official installer for Windows, macOS, or Linux from the **[GitHub Releases Page](https://github.com/lucasgerbasi/LocalVault/releases/latest)**.
 
-## ✨ Core Features (Version 3)
+## ✨ Core Features (Version 3.1)
 
-*   **State-of-the-Art Master Password Protection:** Your master password is protected by **Argon2id**, the current industry gold standard and winner of the Password Hashing Competition, providing superior resistance against modern brute-force attacks.
-*   **End-to-End Encryption:** The entire vault is encrypted using **AES-256-GCM**, a modern authenticated encryption cipher that ensures both confidentiality and data integrity.
-*   **Full Password Management (CRUD):**
-    *   **Create:** Add new password entries, with an optional URL field.
-    *   **Read:** Securely copy usernames/passwords to the clipboard and open associated URLs in the default browser.
-    *   **Update:** Edit existing entries in a secure modal with a password reveal toggle.
-    *   **Delete:** Permanently remove entries from the vault.
-*   **Secure Utilities:** Includes a built-in **Password Generator** for creating strong credentials and a secure **Import/Export** system for encrypted vault backups.
-*   **Robust Security Features:** The vault **Auto-Locks** after 5 minutes of inactivity, and the clipboard is automatically cleared after 30 seconds.
-*   **Modern, Polished User Interface:** A completely redesigned UI with a professional font, **Light and Dark themes**, a real-time search filter, and custom-styled components for a seamless user experience.
+* **State-of-the-Art Master Password Protection:** Your master password is protected by **Argon2id**, the current industry gold standard and winner of the Password Hashing Competition, providing superior resistance against modern brute-force attacks.
+* **End-to-End Encryption:** The entire vault is encrypted using **AES-256-GCM**, a modern authenticated encryption cipher that ensures both confidentiality and data integrity.
+* **Full Password Management (CRUD):**
+    * **Create:** Add new password entries, with an optional URL field.
+    * **Read:** Securely copy usernames/passwords to the clipboard and open associated URLs in the default browser.
+    * **Update:** Edit existing entries in a secure modal with a password reveal toggle.
+    * **Delete:** Permanently remove entries from the vault.
+* **Secure Notes:** A dedicated encrypted workspace for storing sensitive text, recovery codes, and API keys with a click-to-copy interface.
+* **Secure Utilities:** Includes a built-in **Password Generator** utilizing a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG) via Node's `crypto.randomInt` for unguessable credentials, alongside a secure **Import/Export** system for encrypted vault backups.
+* **Robust Security Features:** The vault **Auto-Locks** after 5 minutes of inactivity, and the clipboard is automatically cleared after 30 seconds.
+* **Modern, Polished User Interface:** A completely redesigned UI with a professional font, **Light and Dark themes**, a real-time search filter, and custom-styled components for a seamless user experience.
 
 ## 🛡️ Security Philosophy
 
@@ -36,6 +37,7 @@ Security was the primary goal of this project. The architecture was designed to 
 
 ## 💻 Tech Stack
 
+<<<<<<< HEAD
 *   **Framework:** [Electron](https://www.electronjs.org/)
 *   **Packaging:** [electron-builder](https://www.electron.build/)
 *   **Backend Logic:** [Node.js](https://nodejs.org/) (using built-in `crypto`, `fs`, `shell` modules)
@@ -44,3 +46,13 @@ Security was the primary goal of this project. The architecture was designed to 
 *   **Cryptography:**
     *   **Encryption Cipher:** AES-256-GCM
     *   **Key Derivation Function:** Argon2id
+=======
+* **Framework:** [Electron](https://www.electronjs.org/)
+* **Packaging:** [electron-builder](https://www.electron.build/)
+* **Backend Logic:** [Node.js](https://nodejs.org/) (using built-in `crypto`, `fs`, `shell` modules)
+* **Key Derivation:** [Argon2](https://www.npmjs.com/package/argon2) (via `argon2` npm package)
+* **Frontend:** HTML5, CSS3, and Vanilla JavaScript (no UI frameworks)
+* **Cryptography:**
+    * **Encryption Cipher:** AES-256-GCM
+    * **Key Derivation Function:** Argon2id
+>>>>>>> 8d09163 (Security: Patch password generator with CSPRNG & add Secure Notes (v3.1))

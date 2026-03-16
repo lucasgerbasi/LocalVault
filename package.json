@@ -1,6 +1,6 @@
 {
   "name": "localvault",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "A secure, local-first password manager.",
   "main": "main.js",
   "author": "Lucas Gerbasi",
