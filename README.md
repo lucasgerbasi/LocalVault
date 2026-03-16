@@ -37,7 +37,6 @@ Security was the primary goal of this project. The architecture was designed to 
 
 ## 💻 Tech Stack
 
-<<<<<<< HEAD
 *   **Framework:** [Electron](https://www.electronjs.org/)
 *   **Packaging:** [electron-builder](https://www.electron.build/)
 *   **Backend Logic:** [Node.js](https://nodejs.org/) (using built-in `crypto`, `fs`, `shell` modules)
@@ -55,4 +54,3 @@ Security was the primary goal of this project. The architecture was designed to 
 * **Cryptography:**
     * **Encryption Cipher:** AES-256-GCM
     * **Key Derivation Function:** Argon2id
->>>>>>> 8d09163 (Security: Patch password generator with CSPRNG & add Secure Notes (v3.1))
