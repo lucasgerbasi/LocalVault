@@ -17,7 +17,7 @@ const userDataPath  = app.getPath('userData');
 const vaultPath     = path.join(userDataPath, 'vault.json');
 const settingsPath  = path.join(userDataPath, 'settings.json');
 
-// ─── Window ──────────────────────────────────────────────────────────────────
+// Window
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -26,17 +26,23 @@ function createWindow() {
     minWidth: 720,
     minHeight: 500,
     title: 'LocalVault',
+    show: false, // Don't show immediately to prevent flickering
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+  
   mainWindow.loadFile('index.html');
   mainWindow.setMenu(null);
+  
+  // Maximize the window to fit the screen, then show it
+  mainWindow.maximize();
+  mainWindow.show();
 }
 
-// ─── Auto-lock ────────────────────────────────────────────────────────────────
+// Auto-lock
 
 function startAutoLockTimer() {
   if (autoLockTimer) clearTimeout(autoLockTimer);
@@ -50,7 +56,7 @@ function startAutoLockTimer() {
 
 function resetAutoLockTimer() { startAutoLockTimer(); }
 
-// ─── Navigation ───────────────────────────────────────────────────────────────
+// Navigation
 
 function loadVaultView() {
   mainWindow.loadFile('vault.html');
@@ -65,7 +71,7 @@ function lockVault() {
   mainWindow.loadFile('index.html');
 }
 
-// ─── Persistence ──────────────────────────────────────────────────────────────
+// Persistence
 
 function saveVault() {
   if (!decryptedVault || !encryptionKey) {
@@ -95,7 +101,7 @@ function saveVault() {
 // Keep old name as alias so nothing breaks
 const savePasswords = saveVault;
 
-// ─── App lifecycle ────────────────────────────────────────────────────────────
+// App lifecycle
 
 app.whenReady().then(() => {
   createWindow();
@@ -108,7 +114,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// ─── IPC: status / create / unlock ───────────────────────────────────────────
+// IPC: status / create / unlock
 
 ipcMain.handle('get-vault-status', () => ({
   vaultExists: fs.existsSync(vaultPath),
@@ -195,7 +201,7 @@ ipcMain.on('unlock-vault', async (event, masterPassword) => {
   }
 });
 
-// ─── Active-event wrapper (resets auto-lock timer) ───────────────────────────
+// Active-event wrapper (resets auto-lock timer)
 
 function handleActiveEvent(handler) {
   return (event, ...args) => {
@@ -204,14 +210,14 @@ function handleActiveEvent(handler) {
   };
 }
 
-// ─── IPC: vault data ─────────────────────────────────────────────────────────
+// IPC: vault data
 
 ipcMain.handle('get-vault-data', () => decryptedVault.passwords);
 ipcMain.handle('get-notes-data', () => decryptedVault.notes || []);
 
 ipcMain.on('lock-vault', lockVault);
 
-// ─── IPC: passwords ───────────────────────────────────────────────────────────
+// IPC: passwords
 
 ipcMain.on('add-password', handleActiveEvent((event, newPassword) => {
   newPassword.id = crypto.randomUUID();
@@ -235,7 +241,7 @@ ipcMain.on('update-password', handleActiveEvent((event, updatedPassword) => {
   }
 }));
 
-// ─── IPC: notes ───────────────────────────────────────────────────────────────
+// IPC: notes
 
 ipcMain.on('add-note', handleActiveEvent((event, note) => {
   note.id        = crypto.randomUUID();
@@ -263,7 +269,7 @@ ipcMain.on('update-note', handleActiveEvent((event, updatedNote) => {
   }
 }));
 
-// ─── IPC: clipboard ──────────────────────────────────────────────────────────
+// IPC: clipboard
 
 ipcMain.on('copy-to-clipboard', handleActiveEvent((event, { id, type }) => {
   if (!decryptedVault) return;
@@ -274,7 +280,7 @@ ipcMain.on('copy-to-clipboard', handleActiveEvent((event, { id, type }) => {
   setTimeout(() => { if (clipboard.readText() === text) clipboard.clear(); }, 30000);
 }));
 
-// ─── IPC: password generator ─────────────────────────────────────────────────
+// IPC: password generator
 
 ipcMain.handle('generate-password', () => {
   const charset = {
@@ -299,7 +305,7 @@ ipcMain.handle('generate-password', () => {
   return pw.join('');
 });
 
-// ─── IPC: export / import ────────────────────────────────────────────────────
+// IPC: export / import
 
 ipcMain.handle('export-vault', async () => {
   const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
@@ -344,7 +350,7 @@ ipcMain.handle('import-vault', async () => {
   }
 });
 
-// ─── IPC: settings ───────────────────────────────────────────────────────────
+// IPC: settings
 
 ipcMain.handle('get-settings', () => {
   try {
@@ -359,7 +365,7 @@ ipcMain.on('save-settings', (event, settings) => {
   catch (e) { console.error('Error saving settings:', e); }
 });
 
-// ─── IPC: open URL ───────────────────────────────────────────────────────────
+// IPC: open URL
 
 ipcMain.on('open-url', (event, url) => {
   if (!url) return;
