@@ -1,52 +1,344 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>LocalVault</title>
-    <!-- NEW: Import the Inter font family to match the rest of the app -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
+
     <style>
-        .hidden { display: none !important; }
+        .lock-ring {
+            position: absolute;
+            width: clamp(180px,28vw,340px);
+            height: clamp(180px,28vw,340px);
+            border-radius: 50%;
+            border: 1px solid var(--primary-border);
+            pointer-events: none;
+            animation: pulse-ring 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 0.2; }
+            100% { transform: scale(0.9); opacity: 0.8; }
+        }
+
+        .vault-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--bg-raised);
+            border: 1px solid var(--bg-border);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin:0 auto clamp(10px,1.5vh,18px);
+            box-shadow: var(--shadow-sm);
+        }
+        .vault-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--primary);
+            fill: none;
+        }
+
+        .version-tag {
+            position: absolute;
+            bottom:8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-3);
+        }
+
+        .form-box { 
+            position: relative; 
+            z-index: 10;
+            transition: all var(--transition-smooth); 
+            max-width: calc(100% - 32px);
+        }
+        
+        /* Educational Create Mode Styles */
+        .form-box.create-mode {
+            width: 100%;
+            max-width: 520px;
+            padding: clamp(24px, 5vw, 40px);
+        }
+        
+        .educational-box {
+            background: var(--bg-raised);
+            border: 1px solid var(--bg-border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom:8px;
+            text-align: left;
+        }
+        .educational-box h3 {
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            color: var(--text-1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .educational-box h3 svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--primary);
+        }
+        .educational-box p {
+            font-size: 0.85rem;
+            color: var(--text-2);
+            margin: 0 0 12px 0;
+            line-height: 1.5;
+        }
+        .educational-box ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 0.85rem;
+            color: var(--text-2);
+            line-height: 1.6;
+        }
+        .educational-box li {
+            margin-bottom: 6px;
+        }
+        .educational-box strong {
+            color: var(--text-1);
+        }
+
+        /* Zxcvbn Styles */
+        .strength-segs { display: flex; gap: 4px; margin: 12px 0 8px; }
+        .seg { height: 4px; flex: 1; border-radius: 2px; background: var(--bg-raised); transition: background 0.3s; }
+        .seg.s0, .seg.s1 { background: var(--danger); }
+        .seg.s2 { background: var(--warn); }
+        .seg.s3 { background: var(--success); }
+        .seg.s4 { background: var(--primary); }
+        
+        .crack-time { 
+            font-family: var(--font-mono); 
+            font-size: 0.75rem; 
+            color: var(--text-3); 
+            text-align: left; 
+            min-height: 16px; 
+            margin-bottom: 12px;
+        }
+        .crack-time span { color: var(--text-1); font-weight: 500; }
+
+        .feedback-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 16px 0;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 20px;
+        }
+        .feedback-item {
+            font-size: 0.8rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.4;
+        }
+        .feedback-item.warn { color: var(--warn); }
+        .feedback-item.bad { color: var(--danger); }
+        .feedback-item.good { color: var(--success); }
+        .feedback-item svg {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- State 1: Create Vault (Initially hidden) -->
-        <div id="create-view" class="form-box hidden">
-            <h1>Welcome to LocalVault</h1>
-            <p>Create a master password to secure your new vault.</p>
+        <div class="lock-ring"></div>
+
+        <div id="create-view" class="form-box create-mode hidden">
+            <div class="vault-icon">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <polyline points="9 12 11 14 15 10"></polyline>
+                </svg>
+            </div>
+            <h1>Initialize Vault</h1>
+            <p>Create the master password for your local vault.</p>
+            
+            <details class="educational-box"><summary><strong>Master Password Guide</strong></summary>
+                <h3>
+                    <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </h3>
+                <p>This is the only password you will ever need to remember. It protects everything else, so it must be strong.</p>
+                <ul>
+                    <li><strong>Use a Passphrase:</strong> A sequence of random words is highly secure and easy to type.</li>
+                    <li><strong>Prioritize Length:</strong> Aim for 16 or more characters.</li>
+                    <li><strong>Keep it Unique:</strong> Never reuse a password from any other account or service.</li>
+                </ul></details>
+
             <form id="create-vault-form">
-                <input type="password" id="create-password-input" placeholder="Master Password" required>
-                <input type="password" id="confirm-password-input" placeholder="Confirm Password" required>
+                <input type="password" id="create-password-input" placeholder="Enter your Master Password" required autofocus>
+                
+                <div class="strength-segs" id="create-strength-segs">
+                    <div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div>
+                </div>
+                <div class="crack-time" id="create-crack-time"></div>
+                <ul class="feedback-list" id="create-feedback-list"></ul>
+
+                <input type="password" id="confirm-password-input" placeholder="Confirm Master Password" required>
                 <button type="submit">Create Vault</button>
             </form>
             <p id="create-error-message" class="error"></p>
         </div>
 
-        <!-- State 2: Unlock Vault (Initially hidden) -->
         <div id="unlock-view" class="form-box hidden">
+            <div class="vault-icon">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <polyline points="9 12 11 14 15 10"></polyline>
+                </svg>
+            </div>
             <h1>LocalVault</h1>
-            <p>Enter your Master Password to unlock.</p>
+            <p>Enter your master password to unlock.</p>
             <form id="unlock-vault-form">
-                <input type="password" id="unlock-password-input" placeholder="Master Password" required>
+                <input type="password" id="unlock-password-input" placeholder="Master Password" required autofocus>
                 <button type="submit">Unlock</button>
             </form>
             <p id="unlock-error-message" class="error"></p>
         </div>
+
+        <span class="version-tag">v3.2 · secure · local</span>
     </div>
 
     <script>
-        // The script is completely unchanged and does not need to be modified.
-        const createView = document.getElementById('create-view'); const unlockView = document.getElementById('unlock-view'); const createForm = document.getElementById('create-vault-form'); const createPasswordInput = document.getElementById('create-password-input'); const confirmPasswordInput = document.getElementById('confirm-password-input'); const createErrorMessage = document.getElementById('create-error-message'); const unlockForm = document.getElementById('unlock-vault-form'); const unlockPasswordInput = document.getElementById('unlock-password-input'); const unlockErrorMessage = document.getElementById('unlock-error-message');
-        document.addEventListener('DOMContentLoaded', async () => { const { vaultExists } = await window.electronAPI.getVaultStatus(); if (vaultExists) { unlockView.classList.remove('hidden'); } else { createView.classList.remove('hidden'); } });
-        createForm.addEventListener('submit', (event) => { event.preventDefault(); createErrorMessage.innerText = ''; const masterPassword = createPasswordInput.value; const confirmPassword = confirmPasswordInput.value; if (masterPassword !== confirmPassword) { createErrorMessage.innerText = 'Passwords do not match.'; return; } if (masterPassword.length < 8) { createErrorMessage.innerText = 'Password must be at least 8 characters long.'; return; } window.electronAPI.createVault(masterPassword); });
-        unlockForm.addEventListener('submit', (event) => { event.preventDefault(); unlockErrorMessage.innerText = ''; const masterPassword = unlockPasswordInput.value; window.electronAPI.unlockVault(masterPassword); });
-        window.electronAPI.onUnlockFailed(() => { unlockErrorMessage.innerText = 'Incorrect master password. Please try again.'; });
+        const createView = document.getElementById('create-view');
+        const unlockView = document.getElementById('unlock-view');
+        const createForm = document.getElementById('create-vault-form');
+        const createPasswordInput = document.getElementById('create-password-input');
+        const confirmPasswordInput = document.getElementById('confirm-password-input');
+        const createErrorMessage = document.getElementById('create-error-message');
+        const unlockForm = document.getElementById('unlock-vault-form');
+        const unlockPasswordInput = document.getElementById('unlock-password-input');
+        const unlockErrorMessage = document.getElementById('unlock-error-message');
+
+        const createSegsContainer = document.getElementById('create-strength-segs');
+        const createCrackTime = document.getElementById('create-crack-time');
+        const createFeedbackList = document.getElementById('create-feedback-list');
+
+        const alertIcon = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="none"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>`;
+        const checkIcon = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>`;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const settings = await window.electronAPI.getSettings();
+            if (settings.theme === 'light') document.body.classList.add('light-mode');
+
+            const { vaultExists } = await window.electronAPI.getVaultStatus();
+            if (vaultExists) {
+                unlockView.classList.remove('hidden');
+            } else {
+                createView.classList.remove('hidden');
+            }
+        });
+
+        createPasswordInput.addEventListener('input', () => {
+            const pw = createPasswordInput.value;
+            const segs = Array.from(createSegsContainer.children);
+            
+            createFeedbackList.innerHTML = '';
+            
+            if (!pw) {
+                segs.forEach(s => s.className = 'seg');
+                createCrackTime.innerHTML = '';
+                return;
+            }
+
+            const result = zxcvbn(pw);
+            const lvl = result.score;
+            
+            segs.forEach((s, i) => { 
+                s.className = i <= lvl ? `seg s${lvl}` : 'seg'; 
+            });
+            
+            createCrackTime.innerHTML = `Estimated time to crack: <span>${result.crack_times_display.offline_slow_hashing_1e4_per_second}</span>`;
+
+            const c = {
+                len8:    pw.length >= 8,
+                len12:   pw.length >= 12,
+                len16:   pw.length >= 16,
+                upper:   /[A-Z]/.test(pw),
+                lower:   /[a-z]/.test(pw),
+                digit:   /[0-9]/.test(pw),
+                special: /[^A-Za-z0-9]/.test(pw)
+            };
+
+            const feedbacks = [];
+
+            if (result.feedback.warning) {
+                feedbacks.push({ type: 'bad', msg: 'Pattern warning: This is highly predictable to cracking algorithms.' });
+            } else if (lvl <= 2 && c.len12) {
+                feedbacks.push({ type: 'warn', msg: 'This password contains common dictionary words or names, making automated attacks easy.' });
+            }
+
+            if (!c.len8) feedbacks.push({ type: 'bad', msg: 'Too short. Use at least 12 characters.' });
+            else if (!c.len12) feedbacks.push({ type: 'warn', msg: 'Passable, but 12 characters or more is the recommended minimum.' });
+            else if (!c.len16) feedbacks.push({ type: 'warn', msg: 'Decent. 16 or more characters makes it considerably stronger.' });
+            else feedbacks.push({ type: 'good', msg: 'Good length (' + pw.length + ' characters).' });
+            
+            if (!c.upper || !c.lower) feedbacks.push({ type: 'warn', msg: 'Mix uppercase and lowercase letters.' });
+            else feedbacks.push({ type: 'good', msg: 'Good mix of uppercase and lowercase.' });
+            
+            if (!c.digit) feedbacks.push({ type: 'warn', msg: 'Include at least one number.' });
+            else feedbacks.push({ type: 'good', msg: 'Contains numbers.' });
+            
+            if (!c.special) feedbacks.push({ type: 'warn', msg: 'Adding symbols like !@#$ significantly increases strength.' });
+            else feedbacks.push({ type: 'good', msg: 'Contains symbols.' });
+
+            feedbacks.forEach(f => {
+                const li = document.createElement('li');
+                li.className = `feedback-item ${f.type}`;
+                li.innerHTML = `${f.type === 'good' ? checkIcon : alertIcon} <span>${f.msg}</span>`;
+                createFeedbackList.appendChild(li);
+            });
+        });
+
+        createForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            createErrorMessage.innerText = '';
+            const masterPassword = createPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (masterPassword !== confirmPassword) {
+                createErrorMessage.innerText = 'Passwords do not match.';
+                return;
+            }
+            if (masterPassword.length < 8) {
+                createErrorMessage.innerText = 'Password must be at least 8 characters.';
+                return;
+            }
+            
+            window.electronAPI.createVault(masterPassword);
+        });
+
+        unlockForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            unlockErrorMessage.innerText = '';
+            window.electronAPI.unlockVault(unlockPasswordInput.value);
+        });
+
+        window.electronAPI.onUnlockFailed(() => {
+            unlockErrorMessage.innerText = 'Incorrect master password. Please try again.';
+            unlockPasswordInput.value = '';
+            unlockPasswordInput.focus();
+        });
     </script>
 </body>
 </html>

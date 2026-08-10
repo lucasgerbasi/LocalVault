@@ -1,243 +1,722 @@
-<!-- vault.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>LocalVault - Unlocked</title>
+    <title>LocalVault — Unlocked</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
+
+    <style>
+        body { overflow: hidden; }
+        
+        .logo-text {
+            font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em;
+            color: var(--text-1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logo-text svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--primary);
+            fill: none;
+        }
+
+        #lock-button { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; padding: 10px 16px; border-radius: 8px; }
+        #lock-button svg { width: 14px; height: 14px; stroke: var(--danger); fill: none; transition: stroke var(--transition-snappy); }
+        .secondary-btn { padding: 10px 16px; font-size: 0.9rem; border-radius: 8px; }
+
+        /* Tabs */
+        .tabs-bar { display: flex; gap: 8px; padding: 16px 0 0; flex-shrink: 0; }
+        .tab-btn { background: transparent; border: 1px solid transparent; color: var(--text-3); font-family: var(--font-display); font-size: 0.9rem; font-weight: 500; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all var(--transition-snappy); }
+        .tab-btn:hover { color: var(--text-1); background: var(--bg-hover); }
+        .tab-btn.active { color: var(--primary); background: var(--primary-glow); border-color: var(--primary-border); }
+        .tab-count { font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-border); color: var(--text-2); padding: 2px 8px; border-radius: 12px; }
+        .tab-btn.active .tab-count { background: var(--primary); color: #fff; }
+
+        /* Tab panels */
+        .tab-panel { display: none; flex: 1; min-height: 0; gap: 20px; }
+        .tab-panel.active { display: flex; animation: fadeUp 0.3s ease forwards; }
+
+        /* Shared panel card */
+        .panel-card { background: var(--bg-card); border: 1px solid var(--bg-border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; min-height: 0; box-shadow: var(--shadow-sm); }
+        .panel-card h2 { font-size: 1.1rem; font-weight: 600; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+
+        /* Sizes */
+        .pw-list-panel   { flex: 2; }
+        .pw-form-panel   { flex: 1.2; }
+        .notes-list-panel { flex: 1; }
+        .note-view-panel  { flex: 2; display: flex; flex-direction: column; }
+
+        /* Search */
+        .search-wrap { margin-bottom: 16px; }
+        .search-wrap input { background: var(--bg-base); margin: 0; padding-left: 42px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 12px center; background-size: 18px; }
+
+        /* Lists */
+        #password-list, #notes-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; padding-right: 4px; }
+
+        /* Password items */
+        .password-item { background: var(--bg-base); border: 1px solid var(--bg-border); padding: 14px 18px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: all var(--transition-snappy); animation: slideIn 0.3s ease both; }
+        
+        /* Tooltip Clipping Fix */
+        .password-item:hover { border-color: var(--primary-border); transform: translateX(4px); box-shadow: var(--shadow-sm); position: relative; z-index: 20; }
+        
+        .item-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--bg-raised); display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--text-2); margin-right: 14px; flex-shrink: 0; font-size: 0.9rem; text-transform: uppercase; }
+        .password-item-details p { color: var(--text-3); font-size: 0.85rem; font-family: var(--font-mono); margin: 2px 0 0; }
+        .password-item h3 { font-size: 1rem; font-weight: 600; margin: 0; }
+        .password-item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+        /* Zxcvbn Strength Meter */
+        .strength-segs { display: flex; gap: 4px; margin: 12px 0 8px; }
+        .seg { height: 4px; flex: 1; border-radius: 2px; background: var(--bg-border); transition: background 0.3s; }
+        .seg.s0, .seg.s1 { background: var(--danger); }
+        .seg.s2 { background: var(--warn); }
+        .seg.s3 { background: var(--success); }
+        .seg.s4 { background: var(--primary); }
+        .crack-time { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-3); text-align: left; min-height: 16px; margin-bottom: 12px;}
+        .crack-time span { color: var(--text-1); font-weight: 500; }
+
+        /* Form divider */
+        .form-divider { height: 1px; background: var(--bg-border); margin: 16px 0; }
+
+        /* Action buttons */
+        .action-btn { background: transparent; border: none; padding: 8px; margin: 0; cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all var(--transition-snappy); color: var(--text-3); }
+        .action-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; transition: stroke var(--transition-snappy); }
+        .action-btn:hover { background: var(--bg-hover); color: var(--text-1); }
+        .delete-btn:hover { background: var(--danger-glow); color: var(--danger); }
+        .copy-btn:hover, .edit-btn:hover { background: var(--primary-glow); color: var(--primary); }
+
+        /* Empty state */
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 48px 20px; flex: 1; }
+        .empty-state svg { width: 48px; height: 48px; stroke: var(--bg-border); fill: none;}
+        .empty-state p { margin: 0; font-size: 0.95rem; color: var(--text-3); text-align: center; }
+
+        /* Note items */
+        .note-item { background: var(--bg-base); border: 1px solid var(--bg-border); border-radius: 12px; padding: 16px; cursor: pointer; transition: all var(--transition-snappy); animation: slideIn 0.3s ease both; }
+        .note-item:hover { border-color: var(--primary-border); transform: translateX(4px); }
+        .note-item.selected { border-color: var(--primary); background: var(--primary-glow); }
+        .note-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+        .note-item-title { font-size: 0.95rem; font-weight: 600; color: var(--text-1); margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .note-item-preview { font-size: 0.85rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+        .note-date { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-3); margin-top: 10px; }
+
+        /* Note viewer */
+        .note-viewer { flex: 1; overflow-y: auto; padding: 4px 8px 4px 0; }
+        .note-viewer-body { font-family: var(--font-mono); font-size: 0.9rem; color: var(--text-2); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
+        .note-code-line { display: block; background: var(--bg-base); border: 1px solid var(--bg-border); border-radius: 8px; padding: 10px 14px; margin: 6px 0; cursor: pointer; transition: all var(--transition-snappy); position: relative; }
+        .note-code-line:hover { border-color: var(--primary); box-shadow: var(--shadow-sm); }
+        .note-code-line::after { content: 'Click to copy'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; color: var(--primary); font-family: var(--font-display); font-weight: 500; opacity: 0; transition: opacity var(--transition-snappy); background: var(--bg-card); padding: 4px 8px; border-radius: 4px; }
+        .note-code-line:hover::after { opacity: 1; }
+        
+        .note-view-footer { display: flex; gap: 8px; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--bg-border); flex-shrink: 0; }
+
+        /* Note textarea */
+        .note-view-panel textarea, .pw-form-panel textarea {
+            width: 100%; flex: 1; resize: none;
+            line-height: 1.6; padding: 16px; margin-top: 8px; min-height: 120px;
+        }
+        
+        .note-actions-row { display: flex; gap: 12px; margin-top: 16px; justify-content: flex-end; }
+        .note-sub-view { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+        .note-sub-view.hidden { display: none !important; }
+
+        /* Confirm modal specific */
+        .confirm-modal-content { width: 380px; }
+        .confirm-modal-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 12px; }
+        .confirm-modal-content > p { font-size: 0.95rem; color: var(--text-2); margin: 0; line-height: 1.5; }
+        .btn-danger { background: var(--danger); color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all var(--transition-snappy); }
+        .btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+        .btn-danger:active { transform: scale(0.97); }
+
+    </style>
 </head>
 <body>
-    <div class="main-container">
-        <header>
-            <h1>LocalVault</h1>
-            <div class="header-actions">
-                <button id="import-vault-btn" class="secondary-btn">Import Vault</button>
-                <button id="export-vault-btn" class="secondary-btn">Export Vault</button>
-                <button id="lock-button">Lock Vault</button>
-            </div>
-        </header>
-        <div class="content-area">
-            <div class="password-list-container">
-                <h2>Stored Passwords</h2>
-                <div class="search-container"><input type="search" id="search-input" placeholder="Search accounts..."></div>
-                <ul id="password-list"></ul>
-            </div>
-            <div class="password-form-container">
-                <h2>Add New Password</h2>
-                <form id="add-password-form">
-                    <input type="text" id="account-name" placeholder="Account (e.g., Google)" required>
-                    <input type="text" id="account-username" placeholder="Username / Email" required>
-                    <div class="input-group">
-                        <input type="password" id="account-password" placeholder="Password" required>
-                        <div class="input-group-icons">
-                            <button type="button" class="form-icon-btn generate-btn" id="generate-password-add" title="Generate Password"><svg viewBox="0 0 24 24"><path d="M12.94 2.94c-.58-.59-1.52-.59-2.1 0L2.29 11.47c-.59.58-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l3.02-3.02.85.85-3.02 3.02c-.58.59-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l8.53-8.53c.59-.58.59-1.52 0-2.1L12.94 2.94zM4.41 14.29L3 12.86l8.53-8.53 1.43 1.43L4.41 14.29zm4.24 4.24l-1.43-1.43L15.76 8.57l1.43 1.43-8.53 8.53z"/></svg></button>
-                            <button type="button" class="form-icon-btn reveal-btn" id="reveal-password-add" title="Reveal Password"></button>
-                        </div>
+<div class="main-container">
+
+    <header>
+        <div class="logo-text">
+            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <polyline points="9 12 11 14 15 10"></polyline>
+            </svg>
+            LocalVault
+        </div>
+        <div class="header-actions">
+            <button id="import-vault-btn" class="secondary-btn">Import</button>
+            <button id="export-vault-btn" class="secondary-btn">Export</button>
+            <button id="lock-button">
+                <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                Lock
+            </button>
+            <button id="theme-toggle-btn" class="theme-toggle-btn" data-tooltip="Toggle Theme"></button>
+        </div>
+    </header>
+
+    <div class="tabs-bar">
+        <button class="tab-btn active" data-tab="passwords">
+            Passwords <span class="tab-count" id="pw-tab-count">0</span>
+        </button>
+        <button class="tab-btn" data-tab="notes">
+            Notes <span class="tab-count" id="notes-tab-count">0</span>
+        </button>
+    </div>
+
+    <div class="tab-panel active" id="tab-passwords" style="margin-top:16px;">
+        <div class="panel-card pw-list-panel">
+            <h2>Stored Passwords</h2>
+            <div class="search-wrap"><input type="search" id="search-input" placeholder="Search accounts or usernames…"></div>
+            <ul id="password-list"></ul>
+        </div>
+        <div class="panel-card pw-form-panel">
+            <h2>Add Password</h2>
+            <form id="add-password-form">
+                <input type="text"     id="account-name"     placeholder="Account (e.g., Google)" required>
+                <input type="text"     id="account-username" placeholder="Username / Email" required>
+                <input type="text"     id="account-url"      placeholder="URL (optional)">
+                <div class="form-divider"></div>
+                <div class="input-group">
+                    <input type="password" id="account-password" placeholder="Password" required autocomplete="new-password">
+                    <div class="input-group-icons">
+                        <button type="button" class="form-icon-btn" id="generate-password-add" data-tooltip="Generate secure password">
+                            <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+                                <path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="form-icon-btn" id="reveal-password-add" data-tooltip="Reveal password"></button>
                     </div>
-                    <button type="submit">Save Password</button>
+                </div>
+                
+                <div class="strength-segs" id="strength-segs-add">
+                    <div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div>
+                </div>
+                <div class="crack-time" id="crack-time-add"></div>
+
+                <button type="submit">Save Password</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="tab-panel" id="tab-notes" style="margin-top:16px;">
+        <div class="panel-card notes-list-panel">
+            <h2>Secure Notes</h2>
+            <div class="search-wrap"><input type="search" id="notes-search-input" placeholder="Search notes…"></div>
+            <ul id="notes-list"></ul>
+        </div>
+
+        <div class="panel-card note-view-panel">
+            <div class="note-sub-view" id="note-add-view">
+                <h2>New Note</h2>
+                <form id="add-note-form" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+                    <input type="text" id="note-title" placeholder="Title (e.g., API Keys)" required>
+                    <textarea id="note-body" placeholder="Paste recovery codes, sensitive notes, or text here...&#10;&#10;Tip: Complex strings will be highlighted to copy in one click."></textarea>
+                    <div class="note-actions-row"><button type="submit">Save Note</button></div>
+                </form>
+            </div>
+
+            <div class="note-sub-view hidden" id="note-viewer-view">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-shrink:0;">
+                    <h2 style="margin:0;font-size:1.2rem;" id="note-viewer-title-el"></h2>
+                    <div style="display:flex;gap:4px;">
+                        <button class="action-btn edit-btn" id="note-edit-btn" data-tooltip="Edit"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
+                        <button class="action-btn delete-btn" id="note-delete-btn" data-tooltip="Delete"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></button>
+                        <button class="action-btn" id="note-close-btn" data-tooltip="Close" style="margin-left:8px;"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                    </div>
+                </div>
+                <div class="note-viewer">
+                    <div class="note-viewer-body" id="note-viewer-body-el"></div>
+                </div>
+                <div class="note-view-footer">
+                    <span class="note-date" id="note-viewer-date-el" style="margin:0;"></span>
+                </div>
+            </div>
+
+            <div class="note-sub-view hidden" id="note-edit-view">
+                <h2>Edit Note</h2>
+                <form id="edit-note-form" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+                    <input type="hidden" id="edit-note-id">
+                    <input type="text" id="edit-note-title" placeholder="Title" required>
+                    <textarea id="edit-note-body"></textarea>
+                    <div class="note-actions-row">
+                        <button type="button" id="cancel-edit-note-btn" class="secondary-btn">Cancel</button>
+                        <button type="submit">Save Changes</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
-    
-    <div id="edit-modal" class="modal-overlay hidden">
-        <div class="modal-content"><form id="edit-password-form"><h2>Edit Password</h2><input type="hidden" id="edit-id"><input type="text" id="edit-account-name" placeholder="Account" required><input type="text" id="edit-account-username" placeholder="Username / Email" required><div class="input-group"><input type="password" id="edit-account-password" placeholder="Password" required><div class="input-group-icons"><button type="button" class="form-icon-btn generate-btn" id="generate-password-edit" title="Generate Password"><svg viewBox="0 0 24 24"><path d="M12.94 2.94c-.58-.59-1.52-.59-2.1 0L2.29 11.47c-.59.58-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l3.02-3.02.85.85-3.02 3.02c-.58.59-.59 1.52 0 2.1l1.43 1.43c.58.59 1.52.59 2.1 0l8.53-8.53c.59-.58.59-1.52 0-2.1L12.94 2.94zM4.41 14.29L3 12.86l8.53-8.53 1.43 1.43L4.41 14.29zm4.24 4.24l-1.43-1.43L15.76 8.57l1.43 1.43-8.53 8.53z"/></svg></button><button type="button" class="form-icon-btn reveal-btn" id="reveal-password-edit" title="Reveal Password"></button></div></div><div class="modal-actions"><button type="button" id="cancel-edit-btn">Cancel</button><button type="submit">Save Changes</button></div></form></div>
+
+</div>
+
+<div id="edit-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <form id="edit-password-form">
+            <h2>Edit Password</h2>
+            <input type="hidden" id="edit-id">
+            <input type="text"     id="edit-account-name"     placeholder="Account" required>
+            <input type="text"     id="edit-account-username" placeholder="Username / Email" required>
+            <input type="text"     id="edit-account-url"      placeholder="URL (optional)">
+            <div class="form-divider"></div>
+            <div class="input-group">
+                <input type="password" id="edit-account-password" placeholder="Password" required autocomplete="new-password">
+                <div class="input-group-icons">
+                    <button type="button" class="form-icon-btn" id="generate-password-edit" data-tooltip="Generate password">
+                        <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path>
+                            <path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path>
+                        </svg>
+                    </button>
+                    <button type="button" class="form-icon-btn" id="reveal-password-edit" data-tooltip="Reveal password"></button>
+                </div>
+            </div>
+            
+            <div class="strength-segs" id="strength-segs-edit">
+                <div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div>
+            </div>
+            <div class="crack-time" id="crack-time-edit"></div>
+
+            <div class="modal-actions">
+                <button type="button" id="cancel-edit-btn" class="secondary-btn">Cancel</button>
+                <button type="submit">Save Changes</button>
+            </div>
+        </form>
     </div>
-    <div id="toast-notification" class="toast-notification"></div>
+</div>
 
-    <script>
-        const passwordList = document.getElementById('password-list');
-        const searchInput = document.getElementById('search-input');
-        const addPasswordForm = document.getElementById('add-password-form');
-        const lockButton = document.getElementById('lock-button');
-        const exportVaultBtn = document.getElementById('export-vault-btn');
-        const importVaultBtn = document.getElementById('import-vault-btn');
-        const editModal = document.getElementById('edit-modal');
-        const editPasswordForm = document.getElementById('edit-password-form');
-        const cancelEditBtn = document.getElementById('cancel-edit-btn');
-        const toast = document.getElementById('toast-notification');
-        const generateBtnAdd = document.getElementById('generate-password-add');
-        const generateBtnEdit = document.getElementById('generate-password-edit');
-        const revealBtnAdd = document.getElementById('reveal-password-add');
-        const revealBtnEdit = document.getElementById('reveal-password-edit');
-        let currentPasswords = [];
-        let toastTimer;
+<div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal-content confirm-modal-content">
+        <p class="confirm-modal-title" id="confirm-modal-title">Delete this item?</p>
+        <p id="confirm-modal-body">This action cannot be undone.</p>
+        <div class="modal-actions">
+            <button type="button" id="confirm-cancel-btn" class="secondary-btn">Cancel</button>
+            <button type="button" id="confirm-ok-btn" class="btn-danger">Delete</button>
+        </div>
+    </div>
+</div>
 
-        const eyeIcon = `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 12c-2.48 0-4.5-2.02-4.5-4.5S9.52 7.5 12 7.5s4.5 2.02 4.5 4.5-2.02 4.5-4.5 4.5zm0-7c-1.38 0-2.5 1.12-2.5 2.5S10.62 14.5 12 14.5s2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z"/></svg>`;
-        const eyeSlashIcon = `<svg viewBox="0 0 24 24"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.38 1.12 2.5 2.5 2.5.22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.48 0-4.5-2.02-4.5-4.5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.38-1.12-2.5-2.5-2.5-.05 0-.1.01-.16.02z"/></svg>`;
+<div id="toast-notification" class="toast-notification"></div>
+
+<script>
+/* ── State ── */
+let currentPasswords = [];
+let currentNotes     = [];
+let currentTheme     = 'dark';
+let selectedNoteId   = null;
+let toastTimer;
+let confirmResolve   = null;
+
+const eyeIcon      = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+const eyeSlashIcon = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>`;
+const sunIcon      = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`;
+const moonIcon     = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`;
+
+const copyUserIcon = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`;
+const copyPassIcon = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"></path><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>`;
+
+const editIcon     = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>`;
+const deleteIcon   = `<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>`;
+
+/* ── Utils ── */
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatDate(iso) {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+}
+function getInitials(name) {
+    return (name || '').substring(0, 1).toUpperCase();
+}
+
+/* ── Styled confirm modal ── */
+function showConfirm(title, body) {
+    return new Promise(resolve => {
+        confirmResolve = resolve;
+        document.getElementById('confirm-modal-title').textContent = title;
+        document.getElementById('confirm-modal-body').textContent  = body;
+        const m = document.getElementById('confirm-modal');
+        m.classList.remove('hidden');
+        requestAnimationFrame(() => m.classList.add('visible'));
+    });
+}
+function closeConfirm(result) {
+    const m = document.getElementById('confirm-modal');
+    m.classList.remove('visible');
+    setTimeout(() => m.classList.add('hidden'), 250);
+    if (confirmResolve) { confirmResolve(result); confirmResolve = null; }
+}
+document.getElementById('confirm-ok-btn').addEventListener('click',     () => closeConfirm(true));
+document.getElementById('confirm-cancel-btn').addEventListener('click', () => closeConfirm(false));
+
+/* ── Toast ── */
+function showToast(msg) {
+    clearTimeout(toastTimer);
+    const t = document.getElementById('toast-notification');
+    t.textContent = msg;
+    t.classList.add('show');
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ── Theme ── */
+function applyTheme(theme) {
+    const btn = document.getElementById('theme-toggle-btn');
+    document.body.classList.toggle('light-mode', theme === 'light');
+    btn.innerHTML = theme === 'light' ? moonIcon : sunIcon;
+    currentTheme = theme;
+}
+
+/* ── Tabs ── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+});
+
+/* ── Zxcvbn Password Strength Analyzer ── */
+function bindStrengthMeter(inputId, segsId, crackId) {
+    const input = document.getElementById(inputId);
+    const segContainer = document.getElementById(segsId);
+    const crackEl = document.getElementById(crackId);
+    
+    if (!input) return;
+    
+    input.addEventListener('input', () => {
+        const pw = input.value;
+        const segs = Array.from(segContainer.children);
         
-        function renderPasswords() {
-            passwordList.innerHTML = '';
-            const filterText = searchInput.value.toLowerCase();
-            const filteredPasswords = currentPasswords.filter(pw => 
-                pw.account.toLowerCase().includes(filterText) || 
-                pw.username.toLowerCase().includes(filterText)
-            );
-
-            if (filteredPasswords.length === 0) {
-                passwordList.innerHTML = searchInput.value 
-                    ? '<p>No matching passwords found.</p>' 
-                    : '<p>Your vault is empty.</p>';
-                return;
-            }
-
-            filteredPasswords.forEach(pw => {
-                const listItem = document.createElement('li');
-                listItem.className = 'password-item';
-                listItem.innerHTML = `
-                    <div class="password-item-details">
-                        <h3>${escapeHTML(pw.account)}</h3>
-                        <p>Username: ${escapeHTML(pw.username)}</p>
-                    </div>
-                    <div class="password-item-actions">
-                        <button class="action-btn copy-btn" title="Copy Username" data-id="${pw.id}" data-type="username"><svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg></button>
-                        <button class="action-btn copy-btn" title="Copy Password" data-id="${pw.id}" data-type="password"><svg viewBox="0 0 24 24"><path d="M20.62 8.98l-3.61-3.61c-1.29-1.29-3.37-1.29-4.66 0l-1.06 1.06 7.22 7.22 1.06-1.06c1.29-1.29 1.29-3.37 0-4.66zM9.54 12.08l-5.66 5.66c-.39.39-.39 1.02 0 1.41l2.2 2.2c.39.39 1.02.39 1.41 0l5.66-5.66-3.61-3.61z"/></svg></button>
-                        <button class="action-btn edit-btn" title="Edit" data-id="${pw.id}"><svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg></button>
-                        <button class="action-btn delete-btn" title="Delete" data-id="${pw.id}"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>
-                    </div>
-                `;
-                passwordList.appendChild(listItem);
-            });
+        if (!pw) {
+            segs.forEach(s => s.className = 'seg');
+            crackEl.innerHTML = '';
+            return;
         }
         
-        function escapeHTML(str) { return str.replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-
-        function openEditModal(passwordId) {
-            const passwordToEdit = currentPasswords.find(p => p.id === passwordId);
-            if (!passwordToEdit) return;
-            document.getElementById('edit-id').value = passwordToEdit.id;
-            document.getElementById('edit-account-name').value = passwordToEdit.account;
-            document.getElementById('edit-account-username').value = passwordToEdit.username;
-            document.getElementById('edit-account-password').value = passwordToEdit.password;
-            document.getElementById('edit-account-password').type = 'password';
-            revealBtnEdit.innerHTML = eyeIcon;
-            editModal.classList.remove('hidden');
-            setTimeout(() => editModal.classList.add('visible'), 10);
-        }
-
-        function closeEditModal() {
-            editModal.classList.remove('visible');
-            setTimeout(() => {
-                editModal.classList.add('hidden');
-                document.getElementById('edit-account-password').type = 'password';
-                revealBtnEdit.innerHTML = eyeIcon;
-            }, 200);
-        }
-
-        function showToast(message) {
-            if (toastTimer) clearTimeout(toastTimer);
-            toast.innerText = message;
-            toast.classList.add('show');
-            toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3000);
-        }
-
-        function togglePasswordVisibility(passwordInput, button) {
-            if (passwordInput.type === 'password') {
-                passwordInput.type = 'text';
-                button.innerHTML = eyeSlashIcon;
-                button.title = "Hide Password";
-            } else {
-                passwordInput.type = 'password';
-                button.innerHTML = eyeIcon;
-                button.title = "Reveal Password";
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            currentPasswords = await window.electronAPI.getVaultData();
-            renderPasswords();
-            revealBtnAdd.innerHTML = eyeIcon;
-            revealBtnEdit.innerHTML = eyeIcon;
+        const result = zxcvbn(pw);
+        const lvl = result.score;
+        
+        segs.forEach((s, i) => { 
+            s.className = i <= lvl ? `seg s${lvl}` : 'seg'; 
         });
+        
+        crackEl.innerHTML = `Estimated time to crack: <span>${result.crack_times_display.offline_slow_hashing_1e4_per_second}</span>`;
+    });
+}
 
-        window.electronAPI.onVaultDataUpdated((passwords) => {
-            currentPasswords = passwords;
-            renderPasswords();
-        });
+/* ═══════════════ PASSWORDS ═══════════════ */
+function renderPasswords() {
+    const list   = document.getElementById('password-list');
+    const filter = document.getElementById('search-input').value.toLowerCase();
+    list.innerHTML = '';
+    document.getElementById('pw-tab-count').textContent = currentPasswords.length;
 
-        searchInput.addEventListener('input', renderPasswords);
+    const filtered = currentPasswords.filter(p =>
+        p.account.toLowerCase().includes(filter) || p.username.toLowerCase().includes(filter)
+    );
 
-        lockButton.addEventListener('click', () => window.electronAPI.lockVault());
+    if (!filtered.length) {
+        const li = document.createElement('li');
+        li.style.listStyle = 'none';
+        li.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg><p>${filter ? 'No matching passwords.' : 'No passwords yet — add your first one'}</p></div>`;
+        list.appendChild(li);
+        return;
+    }
 
-        exportVaultBtn.addEventListener('click', async () => {
-            const result = await window.electronAPI.exportVault();
-            if (result.success) {
-                showToast(result.message);
-            }
-        });
+    filtered.forEach((pw, i) => {
+        const li = document.createElement('li');
+        li.className = 'password-item';
+        li.style.animationDelay = `${i * 0.04}s`;
+        const title = pw.url
+            ? `<h3><a href="#" class="account-link" data-url="${escapeHTML(pw.url)}">${escapeHTML(pw.account)}</a></h3>`
+            : `<h3>${escapeHTML(pw.account)}</h3>`;
+        li.innerHTML = `
+            <div style="display:flex;align-items:center;min-width:0;overflow:hidden;">
+                <div class="item-icon">${getInitials(pw.account)}</div>
+                <div class="password-item-details" style="min-width:0;overflow:hidden;">${title}<p>${escapeHTML(pw.username)}</p></div>
+            </div>
+            <div class="password-item-actions">
+                <button class="action-btn copy-btn" data-tooltip="Copy Username" data-id="${pw.id}" data-type="username">${copyUserIcon}</button>
+                <button class="action-btn copy-btn" data-tooltip="Copy Password" data-id="${pw.id}" data-type="password">${copyPassIcon}</button>
+                <button class="action-btn edit-btn"   data-tooltip="Edit"   data-id="${pw.id}">${editIcon}</button>
+                <button class="action-btn delete-btn" data-tooltip="Delete" data-id="${pw.id}">${deleteIcon}</button>
+            </div>`;
+        list.appendChild(li);
+    });
+}
 
-        importVaultBtn.addEventListener('click', async () => {
-            const result = await window.electronAPI.importVault();
-            if (!result.success && result.message.includes('Error')) {
-                showToast('Import failed. Please check the file.');
-            }
-        });
+function openEditModal(id) {
+    const pw = currentPasswords.find(p => p.id === id);
+    if (!pw) return;
+    document.getElementById('edit-id').value               = pw.id;
+    document.getElementById('edit-account-name').value     = pw.account;
+    document.getElementById('edit-account-username').value = pw.username;
+    document.getElementById('edit-account-password').value = pw.password;
+    document.getElementById('edit-account-url').value      = pw.url || '';
+    
+    // Trigger the analyzer update manually for the existing password
+    document.getElementById('edit-account-password').dispatchEvent(new Event('input'));
+    
+    const m = document.getElementById('edit-modal');
+    m.classList.remove('hidden');
+    requestAnimationFrame(() => m.classList.add('visible'));
+}
+function closeEditModal() {
+    const m = document.getElementById('edit-modal');
+    m.classList.remove('visible');
+    setTimeout(() => m.classList.add('hidden'), 250);
+}
+function togglePwVisibility(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    if (inp.type === 'password') { inp.type = 'text';     btn.innerHTML = eyeSlashIcon; btn.dataset.tooltip = 'Hide password'; }
+    else                         { inp.type = 'password'; btn.innerHTML = eyeIcon;      btn.dataset.tooltip = 'Reveal password'; }
+}
 
-        addPasswordForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            window.electronAPI.addPassword({
-                account: document.getElementById('account-name').value,
-                username: document.getElementById('account-username').value,
-                password: document.getElementById('account-password').value,
-            });
-            addPasswordForm.reset();
-        });
+document.getElementById('password-list').addEventListener('click', async (e) => {
+    const link = e.target.closest('.account-link');
+    if (link) { e.preventDefault(); window.electronAPI.openUrl(link.dataset.url); return; }
+    const btn = e.target.closest('.action-btn');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    if (btn.classList.contains('copy-btn')) {
+        window.electronAPI.copyToClipboard({ id, type: btn.dataset.type });
+        showToast(`${btn.dataset.type === 'password' ? 'Password' : 'Username'} copied to clipboard`);
+    }
+    if (btn.classList.contains('delete-btn')) {
+        const ok = await showConfirm('Delete password?', 'This will permanently remove this entry from your vault.');
+        if (ok) window.electronAPI.deletePassword(id);
+    }
+    if (btn.classList.contains('edit-btn')) openEditModal(id);
+});
+document.getElementById('search-input').addEventListener('input', renderPasswords);
+document.getElementById('add-password-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    window.electronAPI.addPassword({
+        account:  document.getElementById('account-name').value,
+        username: document.getElementById('account-username').value,
+        password: document.getElementById('account-password').value,
+        url:      document.getElementById('account-url').value,
+    });
+    e.target.reset();
+    
+    // Reset strength meter
+    Array.from(document.getElementById('strength-segs-add').children).forEach(s => s.className = 'seg');
+    document.getElementById('crack-time-add').innerHTML = '';
+});
 
-        passwordList.addEventListener('click', (event) => {
-            const target = event.target.closest('.action-btn');
-            if (!target) return;
-            const id = target.dataset.id;
-            if (target.classList.contains('copy-btn')) {
-                const type = target.dataset.type;
-                window.electronAPI.copyToClipboard({ id, type });
-                showToast(`${type.charAt(0).toUpperCase() + type.slice(1)} copied to clipboard!`);
-            }
-            if (target.classList.contains('delete-btn')) {
-                if (confirm('Are you sure you want to delete this password?')) {
-                    window.electronAPI.deletePassword(id);
-                }
-            }
-            if (target.classList.contains('edit-btn')) {
-                openEditModal(id);
-            }
-        });
+document.getElementById('cancel-edit-btn').addEventListener('click', closeEditModal);
+document.getElementById('edit-password-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    window.electronAPI.updatePassword({
+        id:       document.getElementById('edit-id').value,
+        account:  document.getElementById('edit-account-name').value,
+        username: document.getElementById('edit-account-username').value,
+        password: document.getElementById('edit-account-password').value,
+        url:      document.getElementById('edit-account-url').value,
+    });
+    closeEditModal();
+});
+const revealBtnAdd  = document.getElementById('reveal-password-add');
+const revealBtnEdit = document.getElementById('reveal-password-edit');
+revealBtnAdd.addEventListener('click',  () => togglePwVisibility('account-password',      revealBtnAdd));
+revealBtnEdit.addEventListener('click', () => togglePwVisibility('edit-account-password', revealBtnEdit));
+document.getElementById('generate-password-add').addEventListener('click', async () => {
+    const pw = await window.electronAPI.generatePassword();
+    const inp = document.getElementById('account-password');
+    inp.value = pw; inp.dispatchEvent(new Event('input'));
+});
+document.getElementById('generate-password-edit').addEventListener('click', async () => {
+    const pw = await window.electronAPI.generatePassword();
+    const inp = document.getElementById('edit-account-password');
+    inp.value = pw; inp.dispatchEvent(new Event('input'));
+});
 
-        cancelEditBtn.addEventListener('click', closeEditModal);
+/* ═══════════════ NOTES ═══════════════ */
+function renderNotes() {
+    const list   = document.getElementById('notes-list');
+    const filter = document.getElementById('notes-search-input').value.toLowerCase();
+    list.innerHTML = '';
+    document.getElementById('notes-tab-count').textContent = currentNotes.length;
 
-        editPasswordForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            const updatedPassword = {
-                id: document.getElementById('edit-id').value,
-                account: document.getElementById('edit-account-name').value,
-                username: document.getElementById('edit-account-username').value,
-                password: document.getElementById('edit-account-password').value,
-            };
-            window.electronAPI.updatePassword(updatedPassword);
-            closeEditModal();
-        });
+    const filtered = currentNotes.filter(n =>
+        n.title.toLowerCase().includes(filter) || (n.body||'').toLowerCase().includes(filter)
+    );
 
-        generateBtnAdd.addEventListener('click', async () => {
-            const newPassword = await window.electronAPI.generatePassword();
-            document.getElementById('account-password').value = newPassword;
-        });
+    if (!filtered.length) {
+        const li = document.createElement('li');
+        li.style.listStyle = 'none';
+        li.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg><p>${filter ? 'No matching notes.' : 'No notes yet — create your first one'}</p></div>`;
+        list.appendChild(li);
+        return;
+    }
 
-        generateBtnEdit.addEventListener('click', async () => {
-            const newPassword = await window.electronAPI.generatePassword();
-            document.getElementById('edit-account-password').value = newPassword;
-        });
+    filtered.forEach((note, i) => {
+        const li = document.createElement('li');
+        li.className = 'note-item' + (note.id === selectedNoteId ? ' selected' : '');
+        li.dataset.id = note.id;
+        li.style.animationDelay = `${i * 0.04}s`;
+        const preview = (note.body||'').replace(/\n/g,' ').slice(0,60);
+        li.innerHTML = `
+            <div class="note-item-header">
+                <div style="min-width:0;overflow:hidden;flex:1;">
+                    <p class="note-item-title">${escapeHTML(note.title)}</p>
+                    <p class="note-item-preview">${escapeHTML(preview)}${preview.length===60?'…':''}</p>
+                </div>
+                <div class="note-item-actions">
+                    <button class="action-btn delete-btn note-del-btn" data-tooltip="Delete" data-id="${note.id}">${deleteIcon}</button>
+                </div>
+            </div>
+            <div class="note-date">${formatDate(note.updatedAt||note.createdAt)}</div>`;
+        list.appendChild(li);
+    });
+}
 
-        revealBtnAdd.addEventListener('click', () => {
-            const passwordInput = document.getElementById('account-password');
-            togglePasswordVisibility(passwordInput, revealBtnAdd);
-        });
+function renderNoteBody(body) {
+    return (body||'').split('\n').map(line => {
+        const t = line.trim();
+        const isCode = t.length >= 6 && /^[A-Za-z0-9\-_\.\/\+@#=!]{6,}$/.test(t);
+        if (isCode) return `<span class="note-code-line" data-copy="${escapeHTML(t)}">${escapeHTML(line)}</span>`;
+        return escapeHTML(line) || '<br>';
+    }).join('\n');
+}
 
-        revealBtnEdit.addEventListener('click', () => {
-            const passwordInput = document.getElementById('edit-account-password');
-            togglePasswordVisibility(passwordInput, revealBtnEdit);
-        });
-    </script>
+function showNoteViewer(id) {
+    const note = currentNotes.find(n => n.id === id);
+    if (!note) return;
+    selectedNoteId = id;
+    document.getElementById('note-add-view').classList.add('hidden');
+    document.getElementById('note-edit-view').classList.add('hidden');
+    document.getElementById('note-viewer-view').classList.remove('hidden');
+    document.getElementById('note-viewer-title-el').textContent = note.title;
+    document.getElementById('note-viewer-body-el').innerHTML    = renderNoteBody(note.body);
+    document.getElementById('note-viewer-date-el').textContent  = 'Updated ' + formatDate(note.updatedAt||note.createdAt);
+    document.getElementById('note-edit-btn').dataset.id   = id;
+    document.getElementById('note-delete-btn').dataset.id = id;
+    renderNotes();
+}
+function showNoteAddView() {
+    selectedNoteId = null;
+    document.getElementById('note-viewer-view').classList.add('hidden');
+    document.getElementById('note-edit-view').classList.add('hidden');
+    document.getElementById('note-add-view').classList.remove('hidden');
+    renderNotes();
+}
+function showNoteEditView(id) {
+    const note = currentNotes.find(n => n.id === id);
+    if (!note) return;
+    document.getElementById('edit-note-id').value    = note.id;
+    document.getElementById('edit-note-title').value = note.title;
+    document.getElementById('edit-note-body').value  = note.body||'';
+    document.getElementById('note-viewer-view').classList.add('hidden');
+    document.getElementById('note-add-view').classList.add('hidden');
+    document.getElementById('note-edit-view').classList.remove('hidden');
+}
+
+document.getElementById('notes-list').addEventListener('click', async (e) => {
+    const delBtn = e.target.closest('.note-del-btn');
+    if (delBtn) {
+        e.stopPropagation();
+        const ok = await showConfirm('Delete note?', 'This will permanently remove this note from your vault.');
+        if (ok) { if (selectedNoteId === delBtn.dataset.id) showNoteAddView(); window.electronAPI.deleteNote(delBtn.dataset.id); }
+        return;
+    }
+    const li = e.target.closest('.note-item');
+    if (li) showNoteViewer(li.dataset.id);
+});
+
+document.getElementById('note-viewer-body-el').addEventListener('click', (e) => {
+    const line = e.target.closest('.note-code-line');
+    if (!line) return;
+    navigator.clipboard.writeText(line.dataset.copy);
+    showToast('Copied to clipboard!');
+});
+
+document.getElementById('note-edit-btn').addEventListener('click',   (e) => showNoteEditView(e.currentTarget.dataset.id));
+document.getElementById('note-delete-btn').addEventListener('click', async (e) => {
+    const id = e.currentTarget.dataset.id;
+    const ok = await showConfirm('Delete note?', 'This will permanently remove this note from your vault.');
+    if (ok) { showNoteAddView(); window.electronAPI.deleteNote(id); }
+});
+document.getElementById('note-close-btn').addEventListener('click', showNoteAddView);
+document.getElementById('notes-search-input').addEventListener('input', renderNotes);
+
+document.getElementById('add-note-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    window.electronAPI.addNote({
+        title: document.getElementById('note-title').value,
+        body:  document.getElementById('note-body').value,
+    });
+    e.target.reset();
+});
+
+document.getElementById('cancel-edit-note-btn').addEventListener('click', () => {
+    selectedNoteId ? showNoteViewer(selectedNoteId) : showNoteAddView();
+});
+document.getElementById('edit-note-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const id = document.getElementById('edit-note-id').value;
+    selectedNoteId = id;
+    window.electronAPI.updateNote({
+        id,
+        title: document.getElementById('edit-note-title').value,
+        body:  document.getElementById('edit-note-body').value,
+    });
+});
+
+/* ═══════════════ IPC CALLBACKS ═══════════════ */
+window.electronAPI.onVaultDataUpdated((passwords) => { currentPasswords = passwords; renderPasswords(); });
+window.electronAPI.onNotesDataUpdated((notes) => {
+    currentNotes = notes;
+    renderNotes();
+    if (selectedNoteId) {
+        const still = currentNotes.find(n => n.id === selectedNoteId);
+        if (still) showNoteViewer(selectedNoteId);
+        else showNoteAddView();
+    }
+});
+
+/* ═══════════════ HEADER ═══════════════ */
+document.getElementById('lock-button').addEventListener('click', () => window.electronAPI.lockVault());
+document.getElementById('theme-toggle-btn').addEventListener('click', () => {
+    const next = currentTheme === 'light' ? 'dark' : 'light';
+    applyTheme(next); window.electronAPI.saveSettings({ theme: next });
+});
+document.getElementById('export-vault-btn').addEventListener('click', async () => {
+    const r = await window.electronAPI.exportVault(); if (r.success) showToast(r.message);
+});
+document.getElementById('import-vault-btn').addEventListener('click', async () => {
+    const r = await window.electronAPI.importVault();
+    if (!r.success && r.message.includes('Error')) showToast('Import failed.');
+});
+
+/* ═══════════════ INIT ═══════════════ */
+document.addEventListener('DOMContentLoaded', async () => {
+    const settings = await window.electronAPI.getSettings();
+    applyTheme(settings.theme);
+    [currentPasswords, currentNotes] = await Promise.all([
+        window.electronAPI.getVaultData(),
+        window.electronAPI.getNotesData(),
+    ]);
+    renderPasswords();
+    renderNotes();
+    revealBtnAdd.innerHTML  = eyeIcon;
+    revealBtnAdd.dataset.tooltip = "Reveal password";
+    revealBtnEdit.innerHTML = eyeIcon;
+    revealBtnEdit.dataset.tooltip = "Reveal password";
+    
+    bindStrengthMeter('account-password', 'strength-segs-add', 'crack-time-add');
+    bindStrengthMeter('edit-account-password', 'strength-segs-edit', 'crack-time-edit');
+});
+</script>
 </body>
 </html>
