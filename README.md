@@ -24,7 +24,7 @@ You can download the latest official installer for Windows, macOS, or Linux from
 * **Secure Notes:** A dedicated encrypted workspace for storing sensitive text, recovery codes, and API keys with a click-to-copy interface.
 * **Secure Utilities:** Includes a built-in **Password Generator** utilizing a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG) via Node's `crypto.randomInt` for unguessable credentials, alongside a secure **Import/Export** system for encrypted vault backups.
 * **Robust Security Features:** The vault **Auto-Locks** after 5 minutes of inactivity, and the clipboard is automatically cleared after 30 seconds.
-* **Modern, Polished User Interface:** A completely redesigned UI with a professional font, **Light and Dark themes**, a real-time search filter, and custom-styled components for a seamless user experience.
+* **Modern, Polished User Interface:** A completely redesigned UI with a professional font, Light and Dark themes, a real-time search filter, and custom-styled components for a seamless user experience.
 
 ## 🛡️ Security Philosophy
 
